@@ -261,15 +261,17 @@ export default function LaunchDetailPage({ params }: { params: Promise<{ id: str
                   <span className={`fyi-chevron ${fyiExpanded ? 'expanded' : ''}`}>▸</span>
                   {fyiReviews.length} optional (FYI) review{fyiReviews.length !== 1 ? 's' : ''}
                 </button>
-                {fyiExpanded && (
-                  <table className="reviews-table">
-                    <tbody>
-                      {fyiReviews.map(review => (
-                        <ReviewRow key={review.id} review={review} launchId={launch.id} />
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                <div className={`sidebar-collapse-content ${fyiExpanded ? 'expanded' : ''}`}>
+                  <div className="sidebar-collapse-inner">
+                    <table className="reviews-table">
+                      <tbody>
+                        {fyiReviews.map(review => (
+                          <ReviewRow key={review.id} review={review} launchId={launch.id} />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </>
             )}
 
@@ -433,9 +435,9 @@ function CollapsibleSection({ title, defaultOpen = false, children }: { title: s
         <span>{title}</span>
         <span className={`sidebar-collapse-chevron ${open ? 'expanded' : ''}`}>▸</span>
       </div>
-      {open && children && (
-        <div className="sidebar-collapse-content">{children}</div>
-      )}
+      <div className={`sidebar-collapse-content ${open ? 'expanded' : ''}`}>
+        <div className="sidebar-collapse-inner">{children}</div>
+      </div>
     </div>
   );
 }

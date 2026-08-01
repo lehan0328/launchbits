@@ -408,7 +408,7 @@ a:hover { color: var(--link-color-hover); }
 }
 
 .sidebar-collapse-chevron {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--text-tertiary);
   transition: transform 200ms ease;
 }
@@ -418,6 +418,23 @@ a:hover { color: var(--link-color-hover); }
 }
 
 .sidebar-collapse-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 250ms ease-out;
+  overflow: hidden;
+}
+
+.sidebar-collapse-content.expanded {
+  grid-template-rows: 1fr;
+}
+
+.sidebar-collapse-inner {
+  min-height: 0;
+  padding-bottom: 0;
+  transition: padding-bottom 250ms ease-out;
+}
+
+.sidebar-collapse-content.expanded .sidebar-collapse-inner {
   padding-bottom: 8px;
 }
 
