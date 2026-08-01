@@ -60,19 +60,6 @@ export function statusLabel(status: LaunchStatus): string {
   return map[status] || status;
 }
 
-/** Dot color class for review status */
-export function reviewDotColor(status: ReviewStatus): string {
-  const map: Record<ReviewStatus, string> = {
-    NOT_REQUIRED: 'dot-gray',
-    FYI: 'dot-gray',
-    PENDING_REVIEW: 'dot-orange',
-    IN_PROGRESS: 'dot-blue',
-    NEEDS_WORK: 'dot-orange',
-    APPROVED: 'dot-green',
-    DENIED: 'dot-red',
-  };
-  return map[status] || 'dot-gray';
-}
 
 export function reviewStatusLabel(status: ReviewStatus): string {
   const map: Record<ReviewStatus, string> = {
