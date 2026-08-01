@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   DataTable,
   TableToolbar,
@@ -12,10 +12,25 @@ import type { Launch } from '@/lib/types';
 
 export default function DashboardPage() {
   const launches = store.getLaunches();
+  const currentUser = store.getCurrentUser();
   const [sortAsc, setSortAsc] = useState(false);
 
   const ownedLaunches = launches;
-  const pendingApproval: Launch[] = [];
+
+  // Get launches that have pending reviews for the current user
+  const pendingApproval = useMemo(() => {
+    const pendingReviews = store.getPendingReviewsForUser(currentUser.id);
+    // Deduplicate by launch — multiple reviews can point to the same launch
+    const seen = new Set<string>();
+    const result: Launch[] = [];
+    for (const review of pendingReviews) {
+      if (review.launch && !seen.has(review.launch_id)) {
+        seen.add(review.launch_id);
+        result.push(review.launch);
+      }
+    }
+    return result;
+  }, [currentUser.id]);
 
   return (
     <div className="app-content">

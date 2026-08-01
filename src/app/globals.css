@@ -838,6 +838,23 @@ a:hover { color: var(--link-color-hover); }
   overflow: hidden;
 }
 
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 8px 8px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sidebar-bottom-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+}
+
+.sidebar-bottom-link svg {
+  flex-shrink: 0;
+}
+
 .app-main {
   margin-left: var(--sidebar-width);
   flex: 1;
@@ -2226,3 +2243,69 @@ a:hover { color: var(--link-color-hover); }
   animation: shimmer 1.5s infinite linear;
   border-radius: var(--radius-sm);
 }
+
+/* --- Settings Page --- */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 32px;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  text-align: left;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.settings-nav-item:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.settings-nav-item.active {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.settings-nav-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.settings-content {
+  min-width: 0;
+}
+
+.settings-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.settings-field {
+  margin-bottom: 16px;
+}
+
+.settings-field:last-child {
+  margin-bottom: 0;
+}
+

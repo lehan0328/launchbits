@@ -321,6 +321,11 @@ class Store {
   }
 
   // --- Events ---
+  getAllEvents(): LaunchEvent[] {
+    return [...this.events]
+      .sort((a, b) => new Date(b.performed_at).getTime() - new Date(a.performed_at).getTime());
+  }
+
   getEventsForLaunch(launchId: string): LaunchEvent[] {
     return this.events
       .filter(e => e.launch_id === launchId)
