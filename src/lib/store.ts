@@ -164,9 +164,9 @@ const DEMO_REVIEWS: LaunchReview[] = [
   },
   {
     id: 'rev-003', launch_id: 'launch-001', review_definition_id: 'rd-eng-lead',
-    status: 'FYI' as ReviewStatus, notes: null,
+    status: 'PENDING_REVIEW' as ReviewStatus, notes: null,
     reviewed_by: null, reviewed_by_name: null, reviewed_at: null,
-    slo_started_at: null, slo_due_at: null, slo_breached: false,
+    slo_started_at: '2026-07-28T10:05:00Z', slo_due_at: '2026-07-31T10:05:00Z', slo_breached: false,
     trigger_reason: 'Engineering lead approval is required for all launches.',
     fyi_allowed: true, owner_approval_disallowed: false, access_restricted: false,
     label: 'Engineering Lead Approval', review_type: 'ENGINEERING_LEAD',

@@ -1,18 +1,53 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 import { store } from '@/lib/store';
+import type { LaunchReview } from '@/lib/types';
 import {
   statusTagClass, statusLabel, riskDotClass, riskTagClass,
-  reviewDotColor, reviewStatusLabel,
-  formatDate, formatDateTime, relativeTime,
-  eventTypeLabel, isBlockingReview,
+  reviewStatusLabel, formatDate, formatDateTime,
+  relativeTime, eventTypeLabel, isBlockingReview,
 } from '@/lib/utils';
 import {
   DATA_LABELS, PURPOSE_LABELS, NETWORK_LABELS,
   AUTH_LABELS, SHARING_LABELS, mapLabels,
 } from '@/lib/labels';
+
+// ============================================================================
+// Review status → CSS class mapping
+// ============================================================================
+
+function reviewStatusTagClass(status: string): string {
+  const map: Record<string, string> = {
+    PENDING_REVIEW: 'review-status-tag--pending',
+    NEEDS_WORK: 'review-status-tag--needs-work',
+    APPROVED: 'review-status-tag--approved',
+    FYI: 'review-status-tag--fyi',
+    NOT_REQUIRED: 'review-status-tag--not-required',
+  };
+  return map[status] || 'review-status-tag--pending';
+}
+
+// Review type → display group label
+const REVIEW_GROUP_LABELS: Record<string, { label: string; icon: string }> = {
+  PRODUCT: { label: 'Product', icon: '≡' },
+  PRIVACY: { label: 'Privacy', icon: '🔒' },
+  SECURITY: { label: 'Security', icon: '🛡' },
+  LEGAL: { label: 'Legal & Compliance', icon: '⚖' },
+  ENGINEERING: { label: 'Engineering', icon: '⚙' },
+};
+
+// Owner avatar color rotation
+const AVATAR_COLORS = ['owner-avatar--blue', 'owner-avatar--green', 'owner-avatar--orange', 'owner-avatar--purple'];
+
+function getInitials(name: string): string {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export default function LaunchDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -20,10 +55,13 @@ export default function LaunchDetailPage({ params }: { params: Promise<{ id: str
   const reviews = launch ? store.getReviewsForLaunch(launch.id) : [];
   const events = launch ? store.getEventsForLaunch(launch.id) : [];
 
+  const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
+  const [fyiExpanded, setFyiExpanded] = useState(false);
+
   if (!launch) {
     return (
       <div className="app-content">
-        <div className="empty-state">
+        <div className="empty-state" style={{ paddingTop: 120 }}>
           <div className="empty-state-title">Launch not found</div>
           <Link href="/" className="btn btn-secondary" style={{ marginTop: 16 }}>← Back to Dashboard</Link>
         </div>
@@ -33,178 +71,150 @@ export default function LaunchDetailPage({ params }: { params: Promise<{ id: str
 
   const blockingReviews = reviews.filter(r => isBlockingReview(r.status));
   const approvedCount = reviews.filter(r => r.status === 'APPROVED').length;
-  const requiredCount = reviews.filter(r => r.status !== 'FYI' && r.status !== 'NOT_REQUIRED').length;
-  const progressPct = requiredCount > 0 ? (approvedCount / requiredCount) * 100 : 0;
+  const requiredReviews = reviews.filter(r => r.status !== 'FYI' && r.status !== 'NOT_REQUIRED');
+  const fyiReviews = reviews.filter(r => r.status === 'FYI' || r.status === 'NOT_REQUIRED');
+  const requiredCount = requiredReviews.length;
 
-  const banner = getBannerConfig(launch.status, blockingReviews.length);
+  // Group required reviews by review_type
+  const groupedReviews = groupReviewsByType(requiredReviews);
+
+  // Owners from store
+  const owners = [store.getCurrentUser()]; // MVP: just the creator
 
   return (
     <>
-      <header className="app-header">
-        <Link href="/" className="text-secondary text-sm" style={{ textDecoration: 'none' }}>← Launches</Link>
-        <div className="flex items-center gap-2">
+      {/* ============================================================ */}
+      {/* Meta Bar (Ariane-style header) */}
+      {/* ============================================================ */}
+      <div className="launch-meta-bar">
+        <div className="launch-meta-bar-left">
+          <Link href="/" className="text-secondary" style={{ textDecoration: 'none', fontSize: 20 }}>←</Link>
+          <span className="launch-meta-id">{launch.display_id}</span>
+          <span className="launch-meta-title">{launch.name}</span>
+        </div>
+
+        <div className="launch-meta-fields">
+          <div className="launch-meta-field">
+            <span className="launch-meta-field-label">Stage</span>
+            <span className="launch-meta-field-value">{launch.display_id}</span>
+          </div>
+          <div className="launch-meta-field">
+            <span className="launch-meta-field-label">Status</span>
+            <span className={`tag ${statusTagClass(launch.status)}`} style={{ marginLeft: 4 }}>
+              {statusLabel(launch.status)}
+            </span>
+          </div>
+          <div className="launch-meta-field">
+            <span className="launch-meta-field-label">Launch Date</span>
+            <span className="launch-meta-field-value">{formatDate(launch.target_date)}</span>
+          </div>
+          <div className="launch-meta-field">
+            <span className="launch-meta-field-label">Reviews completed</span>
+            <span className="launch-meta-field-value">{approvedCount}/{requiredCount}</span>
+          </div>
+        </div>
+
+        <div className="launch-meta-bar-right">
+          <button className="btn btn-secondary btn-sm">Subscribe</button>
           {launch.status === 'APPROVED' && (
             <button className="btn btn-primary btn-sm">Mark Launched</button>
           )}
           {launch.status === 'IN_REVIEW' && blockingReviews.length > 0 && (
             <button className="btn btn-warning btn-sm">Launch with Exception</button>
           )}
-          <button className="btn btn-secondary btn-sm">Edit Launch</button>
+          <button className="btn btn-secondary btn-sm">Stage Actions ▾</button>
         </div>
-      </header>
+      </div>
 
-      <div className="app-content" style={{ maxWidth: 1344 }}>
-        {/* Title Header */}
-        <div className="flex items-center gap-3 mb-2">
-          <span className="launch-display-id">#{launch.display_id}</span>
-          <span className={`tag ${statusTagClass(launch.status)}`}>{statusLabel(launch.status)}</span>
-          <span className="flex items-center gap-1">
-            <span className={`status-dot ${riskDotClass(launch.risk_level)}`} />
-            <span className={`text-sm font-medium ${riskTagClass(launch.risk_level)}`}>{launch.risk_level}</span>
-          </span>
-        </div>
-        <h1 className="page-title mb-2">{launch.name}</h1>
-        {launch.description && <p className="text-secondary text-sm mb-6">{launch.description}</p>}
+      {/* ============================================================ */}
+      {/* Tab Navigation */}
+      {/* ============================================================ */}
+      <div className="launch-tabs">
+        <button
+          className={`launch-tab ${activeTab === 'details' ? 'active' : ''}`}
+          onClick={() => setActiveTab('details')}
+        >
+          Launch details
+          {blockingReviews.length > 0 && (
+            <span className="launch-tab-badge">!</span>
+          )}
+        </button>
+        <button
+          className={`launch-tab ${activeTab === 'activity' ? 'active' : ''}`}
+          onClick={() => setActiveTab('activity')}
+        >
+          Comments &amp; activity
+        </button>
+      </div>
 
-        {/* Readiness Banner */}
-        <div className={`readiness-banner ${banner.className}`}>
-          <span className={`status-dot ${banner.dotClass}`} />
-          <div>
-            <div className="font-medium">{banner.text}</div>
-            {blockingReviews.length > 0 && launch.status === 'IN_REVIEW' && (
-              <div className="text-xs" style={{ marginTop: 4, opacity: 0.8 }}>
-                Waiting on: {blockingReviews.map(r => r.label).join(', ')}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Two-column layout */}
-        <div className="detail-grid">
-          {/* Left: Reviews & Activity */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="page-subtitle">Reviews &amp; Approvals</h2>
-              <span className="text-secondary text-sm">
-                {approvedCount} of {requiredCount} blocking reviews approved
-              </span>
-            </div>
-
-            {requiredCount > 0 && (
-              <div className="progress-bar-track mb-4" style={{ height: 8 }}>
-                <div className="progress-bar-fill" style={{ width: `${progressPct}%` }} />
+      {/* ============================================================ */}
+      {/* Content: Details Tab */}
+      {/* ============================================================ */}
+      {activeTab === 'details' && (
+        <div className="detail-layout">
+          {/* Left Sidebar */}
+          <div className="detail-sidebar">
+            {/* Warning Banner (if draft or missing info) */}
+            {launch.status === 'DRAFT' && (
+              <div className="detail-warning-banner">
+                <span>⚠ Missing launch information</span>
+                <Link href={`/launches/new`} className="review-action-link">Edit</Link>
               </div>
             )}
 
-            {/* Review Cards */}
-            <div className="flex flex-col gap-2">
-              {reviews.map(review => (
-                <div key={review.id} className="card review-card">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className={`status-dot status-dot--lg ${reviewDotColor(review.status)}`} />
-                      <div>
-                        <div className="review-card-label">{review.label}</div>
-                        <div className="review-card-meta">
-                          {reviewStatusLabel(review.status)}
-                          {review.reviewed_by_name && ` · ${review.reviewed_by_name}`}
-                          {review.reviewed_at && ` · ${formatDateTime(review.reviewed_at)}`}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {review.slo_due_at && review.status === 'PENDING_REVIEW' && (
-                    <div className={`review-slo ${review.slo_breached ? 'review-slo--breached' : ''}`}>
-                      SLO: {review.slo_breached
-                        ? `overdue — was due ${formatDate(review.slo_due_at)}`
-                        : `due ${relativeTime(review.slo_due_at)}`}
-                    </div>
-                  )}
-
-                  {review.trigger_reason && (
-                    <div className="review-trigger">
-                      Why required: {review.trigger_reason}
-                    </div>
-                  )}
-
-                  {review.notes && (
-                    <div className="review-notes">
-                      &ldquo;{review.notes}&rdquo;
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Exception Justification */}
-            {launch.launch_justification && (
-              <div className="card mt-4 exception-card">
-                <div className="exception-card-title">Exception Justification</div>
-                <p className="exception-card-body">{launch.launch_justification}</p>
-              </div>
+            {/* Description */}
+            {launch.description && (
+              <p className="detail-description">{launch.description}</p>
             )}
 
-            {/* Activity Log */}
-            <h2 className="page-subtitle mt-8 mb-3">Activity</h2>
-            <div className="card" style={{ padding: 0 }}>
-              <div className="event-log">
-                {events.map(event => (
-                  <div key={event.id} className="event-item">
-                    <div className="event-time">{formatDateTime(event.performed_at)}</div>
-                    <div className="event-description">
-                      <span className="event-actor">{event.performed_by_name || 'System'}</span>
-                      {' '}{eventTypeLabel(event.event_type)}
-                      {event.notes && <span className="text-muted"> — {event.notes}</span>}
-                    </div>
-                  </div>
-                ))}
-                {events.length === 0 && (
-                  <div className="event-empty">No events yet</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Sidebar: Details + Questionnaire */}
-          <div>
-            <div className="card detail-sidebar-card">
-              <h3 className="detail-sidebar-heading">Details</h3>
-              <div className="detail-list">
-                <div className="detail-row">
-                  <span className="detail-label">Status</span>
-                  <span className={`tag ${statusTagClass(launch.status)}`}>{statusLabel(launch.status)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Risk</span>
-                  <span className="flex items-center gap-1">
-                    <span className={`status-dot ${riskDotClass(launch.risk_level)}`} />
-                    <span className={riskTagClass(launch.risk_level)}>{launch.risk_level}</span>
+            {/* Owners */}
+            <div className="detail-field">
+              <span className="detail-field-label">Owners</span>
+              <div className="owner-chips">
+                {owners.map((owner, i) => (
+                  <span key={owner.id} className="owner-chip">
+                    <span className={`owner-avatar ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
+                      {getInitials(owner.display_name)}
+                    </span>
+                    {owner.display_name}
                   </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Target</span>
-                  <span>{formatDate(launch.target_date)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Created</span>
-                  <span>{formatDate(launch.created_at)}</span>
-                </div>
-                {launch.github_repo && (
-                  <div className="detail-row">
-                    <span className="detail-label">GitHub</span>
-                    <span className="truncate" style={{ maxWidth: 160 }}>{launch.github_repo} #{launch.github_pr_number}</span>
-                  </div>
-                )}
-                <div className="detail-row">
-                  <span className="detail-label">Version</span>
-                  <span>v{launch.version}</span>
-                </div>
+                ))}
               </div>
             </div>
 
-            <div className="card mt-3 detail-sidebar-card">
-              <h3 className="detail-sidebar-heading">Questionnaire Summary</h3>
+            {/* Key details */}
+            <div className="detail-field">
+              <span className="detail-field-label">Risk</span>
+              <div className="detail-field-value flex items-center gap-1">
+                <span className={`status-dot ${riskDotClass(launch.risk_level)}`} />
+                <span className={riskTagClass(launch.risk_level)}>{launch.risk_level}</span>
+              </div>
+            </div>
+
+            <div className="detail-field">
+              <span className="detail-field-label">Target</span>
+              <span className="detail-field-value">{formatDate(launch.target_date)}</span>
+            </div>
+
+            <div className="detail-field">
+              <span className="detail-field-label">Created</span>
+              <span className="detail-field-value">{formatDate(launch.created_at)}</span>
+            </div>
+
+            {launch.github_repo && (
+              <div className="detail-field">
+                <span className="detail-field-label">GitHub</span>
+                <span className="detail-field-value truncate">{launch.github_repo} #{launch.github_pr_number}</span>
+              </div>
+            )}
+
+            <div className="detail-field">
+              <span className="detail-field-label">Version</span>
+              <span className="detail-field-value">v{launch.version}</span>
+            </div>
+
+            {/* Questionnaire Summary (collapsible) */}
+            <CollapsibleSection title="Questionnaire Summary" defaultOpen>
               <div className="questionnaire-summary">
                 <QuestionnaireSummaryItem label="Data Classification" value={mapLabels(launch.q_data_classes, DATA_LABELS)} />
                 <QuestionnaireSummaryItem label="Processing Purpose" value={mapLabels(launch.q_processing_purpose, PURPOSE_LABELS)} />
@@ -212,12 +222,96 @@ export default function LaunchDetailPage({ params }: { params: Promise<{ id: str
                 <QuestionnaireSummaryItem label="Auth & Secrets" value={mapLabels(launch.q_auth_secrets, AUTH_LABELS)} />
                 <QuestionnaireSummaryItem label="External Sharing" value={mapLabels(launch.q_external_sharing, SHARING_LABELS)} />
               </div>
-            </div>
+            </CollapsibleSection>
 
-            <button className="btn btn-secondary mt-3" style={{ width: '100%' }}>Export Audit Report</button>
+            {/* Placeholder collapsible sections (Ariane-style) */}
+            <CollapsibleSection title="All members" />
+            <CollapsibleSection title="All documents" />
+
+            <button className="btn btn-secondary mt-4" style={{ width: '100%' }}>Export Audit Report</button>
+          </div>
+
+          {/* Main Content: Reviews Table */}
+          <div className="detail-main">
+            {/* Readiness banner */}
+            <ReadinessBanner status={launch.status} blockingCount={blockingReviews.length} />
+
+            <h2 className="reviews-section-title">Required Reviews</h2>
+
+            <table className="reviews-table">
+              <thead>
+                <tr>
+                  <th>Review</th>
+                  <th>Status</th>
+                  <th>Assignee</th>
+                  <th>Your Todos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedReviews.map(group => (
+                  <ReviewGroup key={group.type} group={group} launchId={launch.id} />
+                ))}
+              </tbody>
+            </table>
+
+            {/* FYI reviews collapsible */}
+            {fyiReviews.length > 0 && (
+              <>
+                <button className="fyi-toggle" onClick={() => setFyiExpanded(!fyiExpanded)}>
+                  <span className={`fyi-chevron ${fyiExpanded ? 'expanded' : ''}`}>▸</span>
+                  {fyiReviews.length} optional (FYI) review{fyiReviews.length !== 1 ? 's' : ''}
+                </button>
+                {fyiExpanded && (
+                  <table className="reviews-table">
+                    <tbody>
+                      {fyiReviews.map(review => (
+                        <ReviewRow key={review.id} review={review} launchId={launch.id} />
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </>
+            )}
+
+            {/* Exception justification */}
+            {launch.launch_justification && (
+              <div className="detail-warning-banner mt-4" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                <span style={{ fontWeight: 600 }}>Exception Justification</span>
+                <span style={{ fontWeight: 400 }}>{launch.launch_justification}</span>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* Content: Comments & Activity Tab */}
+      {/* ============================================================ */}
+      {activeTab === 'activity' && (
+        <div className="detail-main activity-tab-content" style={{ padding: '24px 32px' }}>
+          <h2 className="reviews-section-title">Activity</h2>
+          <div className="event-log">
+            {events.map(event => (
+              <div key={event.id} className="event-item">
+                <div className="event-time">{formatDateTime(event.performed_at)}</div>
+                <div className="event-description">
+                  <span className="event-actor">{event.performed_by_name || 'System'}</span>
+                  {' '}{eventTypeLabel(event.event_type)}
+                  {event.notes && <span className="text-muted"> — {event.notes}</span>}
+                </div>
+              </div>
+            ))}
+            {events.length === 0 && (
+              <div className="empty-state" style={{ padding: '40px 0' }}>
+                <div className="empty-state-title">No activity yet</div>
+                <p className="text-secondary text-sm" style={{ marginTop: 8 }}>
+                  Events will appear here as the launch progresses.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -226,11 +320,86 @@ export default function LaunchDetailPage({ params }: { params: Promise<{ id: str
 // Sub-components
 // ============================================================================
 
-function QuestionnaireSummaryItem({ label, value }: { label: string; value: string }) {
+interface ReviewGroupData {
+  type: string;
+  label: string;
+  icon: string;
+  reviews: LaunchReview[];
+}
+
+function groupReviewsByType(reviews: LaunchReview[]): ReviewGroupData[] {
+  const groups = new Map<string, LaunchReview[]>();
+
+  for (const review of reviews) {
+    const type = review.review_type || 'PRODUCT';
+    if (!groups.has(type)) groups.set(type, []);
+    groups.get(type)!.push(review);
+  }
+
+  return Array.from(groups.entries()).map(([type, reviews]) => {
+    const groupInfo = REVIEW_GROUP_LABELS[type] || { label: type, icon: '≡' };
+    return { type, label: groupInfo.label, icon: groupInfo.icon, reviews };
+  });
+}
+
+function ReviewGroup({ group, launchId }: { group: ReviewGroupData; launchId: string }) {
   return (
-    <div>
-      <div className="questionnaire-label">{label}</div>
-      <div className="questionnaire-value">{value}</div>
+    <>
+      <tr className="review-group-header">
+        <td colSpan={4}>
+          <span className="review-group-icon">{group.icon}</span>
+          {group.label}
+        </td>
+      </tr>
+      {group.reviews.map(review => (
+        <ReviewRow key={review.id} review={review} launchId={launchId} />
+      ))}
+    </>
+  );
+}
+
+function ReviewRow({ review, launchId }: { review: LaunchReview; launchId: string }) {
+  return (
+    <tr>
+      <td>
+        <span className="review-name-link">{review.label}</span>
+      </td>
+      <td>
+        <span className={`review-status-tag ${reviewStatusTagClass(review.status)}`}>
+          {reviewStatusLabel(review.status)}
+        </span>
+      </td>
+      <td>
+        {review.reviewed_by_name ? (
+          <span className="assignee-cell">
+            <span className="assignee-avatar">{getInitials(review.reviewed_by_name)}</span>
+            {review.reviewed_by_name}
+          </span>
+        ) : (
+          <span className="text-muted text-sm">—</span>
+        )}
+      </td>
+      <td>
+        {isBlockingReview(review.status) ? (
+          <Link href={`/launches/${launchId}`} className="review-action-link">
+            Review →
+          </Link>
+        ) : (
+          <span className="text-muted text-sm">—</span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function ReadinessBanner({ status, blockingCount }: { status: string; blockingCount: number }) {
+  const config = getBannerConfig(status, blockingCount);
+  return (
+    <div className={`readiness-banner ${config.className}`} style={{ marginBottom: 16 }}>
+      <span className={`status-dot ${config.dotClass}`} />
+      <div>
+        <div className="font-medium">{config.text}</div>
+      </div>
     </div>
   );
 }
@@ -253,4 +422,29 @@ function getBannerConfig(status: string, blockingCount: number) {
     return { className: 'warning', dotClass: 'dot-orange', text: 'Launched with exception. Outstanding reviews must be completed.' };
   }
   return { className: 'draft', dotClass: 'dot-gray', text: 'This launch is in draft. Complete the questionnaire and submit for review.' };
+}
+
+function CollapsibleSection({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children?: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="sidebar-collapse">
+      <div className="sidebar-collapse-header" onClick={() => setOpen(!open)}>
+        <span>{title}</span>
+        <span className={`sidebar-collapse-chevron ${open ? 'expanded' : ''}`}>▸</span>
+      </div>
+      {open && children && (
+        <div className="sidebar-collapse-content">{children}</div>
+      )}
+    </div>
+  );
+}
+
+function QuestionnaireSummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="questionnaire-label">{label}</div>
+      <div className="questionnaire-value">{value}</div>
+    </div>
+  );
 }
