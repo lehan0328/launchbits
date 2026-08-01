@@ -4,18 +4,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { store } from '@/lib/store';
+import type { User } from '@/lib/types';
 
-export default function Sidebar() {
+interface SidebarProps {
+  user: User;
+}
+
+export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const { collapsed } = useSidebar();
   const [pastExpanded, setPastExpanded] = useState(false);
   const [teamsExpanded, setTeamsExpanded] = useState(false);
 
-  // Dynamic counts from store
-  const ownedCount = store.getLaunches().length;
-  const currentUser = store.getCurrentUser();
-  const pendingCount = store.getPendingReviewsForUser(currentUser.id).length;
+  // Counts are no longer fetched here — they're rendered server-side or omitted
+  // until we add real-time subscriptions in a future phase.
+  void user; // user prop available for future role-based nav filtering
 
   return (
     <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -42,14 +45,12 @@ export default function Sidebar() {
           className={`nav-link ${pathname === '/owned' ? 'active' : ''}`}
         >
           Owned by you
-          <span className="nav-count">({ownedCount})</span>
         </Link>
         <Link
           href="/reviews"
           className={`nav-link ${pathname === '/reviews' ? 'active' : ''}`}
         >
           Pending your approval
-          <span className="nav-count">({pendingCount})</span>
         </Link>
         <Link
           href="/drafts"
@@ -97,7 +98,7 @@ export default function Sidebar() {
         </>
       )}
 
-      {/* Settings — pinned to bottom (industry standard) */}
+      {/* Settings — pinned to bottom */}
       <div className="sidebar-bottom">
         <Link
           href="/settings"

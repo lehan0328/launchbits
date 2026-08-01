@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { QUESTIONNAIRE_SECTIONS, isSectionVisible } from '@/lib/questionnaire';
 import { calculateRiskLevel } from '@/lib/risk-calculator';
 import { evaluateRequiredReviews, DEFAULT_RULES } from '@/lib/rules-engine';
-import { store } from '@/lib/store';
-import type { LaunchFormData } from '@/lib/types';
+import type { LaunchFormData, ReviewDefinition } from '@/lib/types';
 
 // ============================================================================
 // Shared Launch Form — used by both /launches/new and /launches/[id]/edit
@@ -49,6 +47,7 @@ const RISK_COLORS: Record<string, string> = {
 interface LaunchFormProps {
   title: string;
   initialData: LaunchFormData;
+  reviewDefinitions: ReviewDefinition[];
   disabled?: boolean;
   previousRiskLevel?: string;
   headerExtra?: React.ReactNode;
@@ -56,24 +55,22 @@ interface LaunchFormProps {
     formData: LaunchFormData;
     riskLevel: string;
     requiredReviews: ReturnType<typeof evaluateRequiredReviews>;
-    router: ReturnType<typeof useRouter>;
   }) => React.ReactNode;
 }
 
 export default function LaunchForm({
   title,
   initialData,
+  reviewDefinitions,
   disabled = false,
   previousRiskLevel,
   headerExtra,
   actions,
 }: LaunchFormProps) {
-  const router = useRouter();
+
   const [formData, setFormData] = useState<LaunchFormData>(initialData);
 
   const riskLevel = useMemo(() => calculateRiskLevel(formData), [formData]);
-
-  const reviewDefinitions = store.getReviewDefinitions();
   const requiredReviews = useMemo(
     () => evaluateRequiredReviews(formData, riskLevel, reviewDefinitions, DEFAULT_RULES),
     [formData, riskLevel, reviewDefinitions],
@@ -231,7 +228,7 @@ export default function LaunchForm({
 
             {/* Actions — left-aligned like Ariane */}
             <div className="ar-actions">
-              {actions({ formData, riskLevel, requiredReviews, router })}
+              {actions({ formData, riskLevel, requiredReviews })}
             </div>
           </div>
         </div>
@@ -318,7 +315,7 @@ export default function LaunchForm({
 
               {/* Section-level actions */}
               <div className="ar-actions">
-                {actions({ formData, riskLevel, requiredReviews, router })}
+                {actions({ formData, riskLevel, requiredReviews })}
               </div>
             </div>
           </div>

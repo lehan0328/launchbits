@@ -5,9 +5,10 @@
 // Reusable column configs for DataTable across pages.
 // ============================================================================
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ColumnDef, statusTextClass } from '@/components/DataTable';
-import { store } from '@/lib/store';
+import { createClient } from '@/lib/supabase/client';
 import type { Launch, LaunchReview, ReviewWithLaunch } from '@/lib/types';
 import {
   statusLabel, formatDate, relativeTime,
@@ -19,7 +20,19 @@ import {
 // ============================================================================
 
 export function ReviewsCell({ launchId }: { launchId: string }) {
-  const reviews = store.getReviewsForLaunch(launchId);
+  const [reviews, setReviews] = useState<LaunchReview[]>([]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from('launch_reviews')
+      .select('*')
+      .eq('launch_id', launchId)
+      .then(({ data }) => {
+        if (data) setReviews(data as LaunchReview[]);
+      });
+  }, [launchId]);
+
   const approvedCount = reviews.filter(r => r.status === 'APPROVED').length;
   const requiredCount = reviews.filter(r => r.status !== 'FYI' && r.status !== 'NOT_REQUIRED').length;
   const pendingCount = reviews.filter(r => isBlockingReview(r.status)).length;

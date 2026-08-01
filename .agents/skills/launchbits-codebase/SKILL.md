@@ -3,7 +3,8 @@ name: launchbits-codebase
 description: >
   Coding standards and architecture patterns for the Launchbits Next.js application.
   Covers file organization, component patterns, type safety, styling conventions,
-  and data layer usage. Triggers when adding new pages, components, or features.
+  data layer with Supabase, and auth patterns. Triggers when adding new pages,
+  components, or features.
 ---
 
 # Launchbits Codebase Patterns
@@ -12,43 +13,81 @@ description: >
 
 ```
 src/
-├── app/                    # Next.js App Router pages
-│   ├── layout.tsx          # Root layout (TopBar + Sidebar + app-layout shell)
-│   ├── page.tsx            # Dashboard (home)
-│   ├── error.tsx           # Error boundary
-│   ├── not-found.tsx       # 404 page
-│   ├── loading.tsx         # Loading skeleton
-│   ├── globals.css         # All styles (design tokens → utilities → components)
-│   ├── owned/page.tsx      # "Owned by you" view
-│   ├── reviews/page.tsx    # "Pending your approval" view
-│   ├── audit/page.tsx      # Audit log (all launch events)
-│   ├── settings/page.tsx   # Org settings (review definitions, team)
+├── app/                         # Next.js App Router pages
+│   ├── layout.tsx               # Root layout (auth-aware: TopBar + Sidebar if logged in)
+│   ├── page.tsx                 # Dashboard (home) — server component
+│   ├── actions.ts               # Server Actions (createLaunch, updateLaunch, submitForReview, signOut)
+│   ├── error.tsx                # Error boundary
+│   ├── not-found.tsx            # 404 page
+│   ├── loading.tsx              # Loading skeleton
+│   ├── globals.css              # All styles (design tokens → utilities → components)
+│   ├── login/                   # Auth pages (standalone, no app shell)
+│   │   ├── page.tsx             # Login with Google OAuth + magic link
+│   │   └── layout.tsx           # Minimal layout (no sidebar/topbar)
+│   ├── auth/callback/route.ts   # OAuth/magic-link callback handler
+│   ├── owned/page.tsx           # "Owned by you" view
+│   ├── reviews/page.tsx         # "Pending your approval" view
+│   ├── audit/
+│   │   ├── page.tsx             # Server wrapper (data fetch)
+│   │   └── AuditLogClient.tsx   # Client component (filtering/pagination)
+│   ├── settings/
+│   │   ├── page.tsx             # Server wrapper (data fetch)
+│   │   └── SettingsClient.tsx   # Client component (tabs)
 │   └── launches/
-│       ├── new/page.tsx    # Create launch form (uses LaunchForm)
+│       ├── new/
+│       │   ├── page.tsx         # Server wrapper (fetch review defs)
+│       │   └── NewLaunchClient.tsx # Client form with Server Actions
 │       └── [id]/
-│           ├── page.tsx    # Launch detail view
-│           └── edit/page.tsx # Edit launch form (uses LaunchForm)
-├── components/             # Reusable UI components
-│   ├── DataTable.tsx       # Generic table (ColumnDef, TableToolbar, SectionHeader)
-│   ├── LaunchForm.tsx      # Shared create/edit form (Ariane-style, questionnaire, risk)
-│   ├── Sidebar.tsx         # App sidebar navigation
-│   └── TopBar.tsx          # Global header bar
-├── contexts/               # React contexts (client-side only)
-│   └── SidebarContext.tsx  # Sidebar collapse/expand state
+│           ├── page.tsx         # Server wrapper (fetch launch + reviews + events)
+│           ├── LaunchDetailClient.tsx # Client detail view
+│           └── edit/
+│               ├── page.tsx     # Server wrapper (fetch launch + review defs)
+│               └── EditLaunchClient.tsx # Client form with Server Actions
+├── components/                  # Reusable UI components
+│   ├── DataTable.tsx            # Generic table (ColumnDef, TableToolbar, SectionHeader)
+│   ├── LaunchForm.tsx           # Shared create/edit form (Ariane-style, questionnaire, risk)
+│   ├── Sidebar.tsx              # App sidebar navigation (receives User prop)
+│   └── TopBar.tsx               # Global header bar (receives User prop, sign out)
+├── contexts/                    # React contexts (client-side only)
+│   └── SidebarContext.tsx       # Sidebar collapse/expand state
 ├── db/
-│   └── schema.sql          # PostgreSQL schema (Supabase-ready, not yet wired)
-└── lib/                    # Pure logic, data, types (no JSX except columns.tsx)
-    ├── types.ts            # All TypeScript interfaces and type aliases
-    ├── store.ts            # In-memory data store (MVP, replace with Supabase)
-    ├── utils.ts            # Formatting, label helpers, status mappers
-    ├── labels.ts           # Display label maps (data classification, network, etc.)
-    ├── columns.tsx         # Shared DataTable column definitions + ReviewsCell
-    ├── questionnaire.ts    # Questionnaire section/question configuration
-    ├── risk-calculator.ts  # Risk level computation from questionnaire answers
-    ├── rules-engine.ts     # Policy rules → required reviews evaluation
-    ├── permissions.ts      # RBAC permission checks (not yet wired to UI)
-    └── state-machine.ts    # Launch status FSM transitions (not yet wired to UI)
+│   ├── schema.sql               # PostgreSQL schema (run in Supabase SQL Editor)
+│   └── seed.sql                 # Demo data (run after schema.sql)
+├── middleware.ts                 # Auth session refresh + route protection
+└── lib/                         # Pure logic, data, types (no JSX except columns.tsx)
+    ├── types.ts                 # All TypeScript interfaces and type aliases
+    ├── db.ts                    # Data access layer (async Supabase queries)
+    ├── store.ts                 # DEPRECATED: in-memory store (kept for reference only)
+    ├── supabase/
+    │   ├── server.ts            # Server-side Supabase client (uses cookies())
+    │   └── client.ts            # Browser-side Supabase client (for client components)
+    ├── utils.ts                 # Formatting, label helpers, status mappers
+    ├── labels.ts                # Display label maps (data classification, network, etc.)
+    ├── columns.tsx              # Shared DataTable column definitions + ReviewsCell
+    ├── questionnaire.ts         # Questionnaire section/question configuration
+    ├── risk-calculator.ts       # Risk level computation from questionnaire answers
+    ├── rules-engine.ts          # Policy rules → required reviews evaluation
+    ├── permissions.ts           # RBAC permission checks (not yet enforced in UI)
+    └── state-machine.ts         # Launch status FSM transitions (not yet enforced)
 ```
+
+## Architecture: Server/Client Component Split
+
+Every page that needs data follows the **Server Wrapper + Client Component** pattern:
+
+```
+page.tsx (Server Component)
+  └── fetches data from db.ts
+  └── passes data as props to:
+      └── *Client.tsx (Client Component)
+          └── handles interactivity (state, events, forms)
+          └── calls Server Actions for mutations
+```
+
+### Why?
+- Data fetching happens server-side (no client-side API calls, no loading spinners)
+- Client components receive serializable data as props
+- Mutations use Next.js Server Actions (defined in `app/actions.ts`)
 
 ## Component Reuse Rule
 
@@ -60,73 +99,68 @@ src/
 >   definitions from `src/lib/columns.tsx`.
 > - **`TableToolbar`** — for sort toggles and filter controls above a DataTable.
 > - **`SectionHeader`** — for titled sections with a count badge and "View all" link.
-> - **`LaunchForm`** — for create and edit launch forms. Do NOT build a new form.
-> - **`Sidebar`** / **`TopBar`** — global chrome, never duplicated in page code.
+> - **`LaunchForm`** — for create and edit launch forms. Receives `reviewDefinitions`
+>   as a prop (server-fetched). Do NOT build a new form.
+> - **`Sidebar`** / **`TopBar`** — global chrome (receive `User` prop from layout).
 
 ## Adding a New Page
 
-1. Create `src/app/<route>/page.tsx`
-2. Do NOT add `<Sidebar>`, `app-layout`, or `<main>` wrapper — layout.tsx handles that
-3. Your page renders inside `<div className="app-content">` only
-4. Add `'use client'` directive only if the page needs React state or event handlers
+1. Create `src/app/<route>/page.tsx` as an **async Server Component**
+2. Fetch data using functions from `src/lib/db.ts`
+3. If the page needs interactivity, create a `*Client.tsx` alongside it
+4. Do NOT add `<Sidebar>`, `app-layout`, or `<main>` wrapper — layout.tsx handles that
+5. Your page renders inside `<div className="app-content">` only
 
 ```tsx
-// ✅ Correct
-'use client';
-import { useState } from 'react';
+// ✅ Correct — Server Component + data fetch
+import { getCurrentUser, getLaunches } from '@/lib/db';
+import { redirect } from 'next/navigation';
+import MyPageClient from './MyPageClient';
 
-export default function MyPage() {
-  const [data, setData] = useState([]);
-  return (
-    <div className="app-content">
-      {/* Page content only */}
-    </div>
-  );
-}
+export default async function MyPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
 
-// ❌ Wrong — duplicates the layout
-export default function MyPage() {
-  return (
-    <div className="app-layout">
-      <Sidebar />
-      <main className="app-main">
-        <div className="app-content">...</div>
-      </main>
-    </div>
-  );
+  const data = await getLaunches(user.org_id);
+  return <MyPageClient data={data} />;
 }
 ```
 
-## Adding a New Table View
+## Data Layer (Supabase)
 
-1. Define column definitions in `src/lib/columns.tsx`
-2. Use `DataTable` + `TableToolbar` from `src/components/DataTable.tsx`
-3. Use existing `ColumnDef<T>` interface — don't create ad-hoc column types
-4. Reuse `ReviewsCell` from columns.tsx if showing review progress
+All data access goes through `src/lib/db.ts` (server-side) or `src/lib/supabase/client.ts` (browser-side, rare).
 
+### Server-side (db.ts) — preferred
 ```tsx
-import { DataTable, TableToolbar } from '@/components/DataTable';
-import { getOwnedColumns } from '@/lib/columns';
+import { getCurrentUser, getLaunches, getLaunchById } from '@/lib/db';
 
-// In page:
-<TableToolbar sortAsc={sortAsc} onToggleSort={() => setSortAsc(!sortAsc)} />
-<DataTable data={launches} columns={getOwnedColumns()} />
+// Always async, always in Server Components or Server Actions
+const user = await getCurrentUser();
+const launches = await getLaunches(user.org_id);
 ```
 
-## Adding a New Type
+### Browser-side (rare — only for ReviewsCell in columns.tsx)
+```tsx
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
+const { data } = await supabase.from('launches').select('*');
+```
 
-1. Add to `src/lib/types.ts`
-2. Use union types for enums (e.g., `type NewStatus = 'A' | 'B' | 'C'`)
-3. Use explicit field definitions — never `[key: string]: unknown`
-4. If it's a "joined" type (like ReviewWithLaunch), extend the base type with `extends`
+### Server Actions (mutations)
+```tsx
+import { createLaunchAction, updateLaunchAction } from '@/app/actions';
 
-## Adding New Questionnaire Sections
+// Call from Client Components — they handle auth, validation, audit logging, redirect
+await createLaunchAction(formData);
+```
 
-1. Add the new section to `QUESTIONNAIRE_SECTIONS` array in `src/lib/questionnaire.ts`
-2. Each section has: `id`, `title`, `icon`, optional `visibleWhen` condition, and `questions[]`
-3. Each question maps to a field in `LaunchFormData` via `fieldName`
-4. Add the corresponding field to `LaunchFormData` in `types.ts` and `INITIAL_FORM_DATA` in `LaunchForm.tsx`
-5. Add risk weights to choices — the risk calculator reads them automatically
+## Auth Pattern
+
+- **Supabase Auth** handles authentication (Google OAuth + Magic Link)
+- **Middleware** (`src/middleware.ts`) refreshes sessions and protects all routes except `/login` and `/auth/*`
+- **Root Layout** (`layout.tsx`) checks auth and conditionally renders the app shell
+- **getCurrentUser()** in `db.ts` maps Supabase Auth user → app users table by email
+- **signOutAction()** in `actions.ts` signs out and redirects to login
 
 ## Styling Patterns
 
@@ -169,29 +203,16 @@ The LaunchForm uses an Ariane-inspired design (modeled after `launch.corp.google
 - Use design token variables (`var(--color-primary)`) over hardcoded hex values
 - New component styles go in globals.css with a clear section comment
 
-## Data Layer
-
-The store (`src/lib/store.ts`) is an in-memory singleton. Key patterns:
-
-```tsx
-import { store } from '@/lib/store';
-
-// Read
-const launches = store.getLaunches();
-const reviews = store.getReviewsForLaunch(launchId);
-const user = store.getCurrentUser();
-
-// Write (mutations don't trigger re-renders — navigation forces remount)
-store.createLaunch({ name: '...' });
-store.updateLaunch(id, { status: 'IN_REVIEW' });
-store.addReview({ ... });
-```
-
-> **Important**: Store mutations don't trigger React re-renders. This is acceptable for MVP because navigation forces component remount. When migrating to Supabase, use React Query or SWR for data fetching.
-
 ## Risk & Review Engine
 
 - `risk-calculator.ts` sums `riskWeight` values from questionnaire choices
 - `rules-engine.ts` evaluates `DEFAULT_RULES` against form data + risk level to determine required reviews
 - `permissions.ts` defines RBAC checks (not yet enforced in UI — ready for server actions)
 - `state-machine.ts` defines valid launch status transitions (not yet enforced — ready for server actions)
+
+## Phase 2 TODO
+
+- Row Level Security (RLS) on all Supabase tables
+- Role-based permission enforcement in UI
+- State machine enforcement in server actions
+- Real-time sidebar counts via Supabase subscriptions

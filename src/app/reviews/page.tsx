@@ -1,23 +1,16 @@
-'use client';
-
-import { useState } from 'react';
-import { DataTable, TableToolbar } from '@/components/DataTable';
-import { store } from '@/lib/store';
+import { DataTable } from '@/components/DataTable';
+import { getCurrentUser, getPendingReviewsForUser } from '@/lib/db';
 import { getReviewColumns } from '@/lib/columns';
+import { redirect } from 'next/navigation';
 
-export default function ReviewsPage() {
-  const currentUser = store.getCurrentUser();
-  const pendingReviews = store.getPendingReviewsForUser(currentUser.id);
-  const [sortAsc, setSortAsc] = useState(false);
+export default async function ReviewsPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
+
+  const pendingReviews = await getPendingReviewsForUser(user.org_id, user.id);
 
   return (
     <div className="app-content">
-      <TableToolbar
-        sortLabel="SLO Due"
-        sortAsc={sortAsc}
-        onToggleSort={() => setSortAsc(!sortAsc)}
-      />
-
       <DataTable
         data={pendingReviews}
         columns={getReviewColumns()}

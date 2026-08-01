@@ -4,10 +4,24 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { signOutAction } from '@/app/actions';
+import type { User } from '@/lib/types';
 
-export default function TopBar() {
+interface TopBarProps {
+  user: User;
+}
+
+export default function TopBar({ user }: TopBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const { toggle } = useSidebar();
+
+  // Generate initials from display name
+  const initials = user.display_name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header className="global-topbar">
@@ -51,9 +65,16 @@ export default function TopBar() {
       </div>
 
       <div className="topbar-right">
-        <div className="topbar-avatar">AC</div>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="topbar-avatar"
+            title={`${user.display_name} — Sign out`}
+          >
+            {initials}
+          </button>
+        </form>
       </div>
     </header>
   );
 }
-
