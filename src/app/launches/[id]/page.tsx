@@ -115,6 +115,9 @@ export default function LaunchDetailPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="launch-meta-bar-right">
+          {(launch.status === 'DRAFT' || launch.status === 'IN_REVIEW') && (
+            <Link href={`/launches/${launch.id}/edit`} className="btn btn-secondary btn-sm">Edit</Link>
+          )}
           <button className="btn btn-secondary btn-sm">Subscribe</button>
           {launch.status === 'APPROVED' && (
             <button className="btn btn-primary btn-sm">Mark Launched</button>

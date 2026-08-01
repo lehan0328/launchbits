@@ -922,7 +922,7 @@ a:hover { color: var(--link-color-hover); }
 }
 
 .app-content {
-  padding: 0;
+  padding: 0 0 0 24px;
 }
 
 /* --- Logo (Google-style product logo) --- */
@@ -2307,5 +2307,329 @@ a:hover { color: var(--link-color-hover); }
 
 .settings-field:last-child {
   margin-bottom: 0;
+}
+
+/* --- Launch Form (Ariane-faithful) --- */
+/* Replicates launch.corp.google.com/create layout */
+
+/* ── Section ────────────────────────────────────────────── */
+.ar-section {
+  margin-bottom: 24px;
+}
+
+/* Section header — blue ✓ circle + title + subtitle */
+.ar-section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.ar-check-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  font-size: 14px;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.ar-check-icon.outline {
+  background: transparent;
+  border: 2px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.ar-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  line-height: 1.3;
+}
+
+.ar-section-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Section body — indented with a left border like Ariane */
+.ar-section-body {
+  margin-left: 14px;
+  padding-left: 26px;
+  border-left: 2px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+/* ── Two-column grid ────────────────────────────────────── */
+.ar-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 48px;
+}
+
+.ar-col {
+  /* Column children stack vertically */
+}
+
+/* ── Field ──────────────────────────────────────────────── */
+.ar-field {
+  margin-bottom: 20px;
+}
+
+.ar-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.ar-label-hint {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.ar-help-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: -2px 0 8px;
+}
+
+/* ── Underline-style inputs (like Ariane) ───────────────── */
+.ar-input {
+  width: 100%;
+  padding: 10px 0;
+  font-size: 14px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-default);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.ar-input:focus {
+  border-bottom-color: var(--color-primary);
+  box-shadow: 0 1px 0 0 var(--color-primary);
+}
+
+.ar-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.ar-input-short {
+  max-width: 240px;
+}
+
+.ar-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+  transition: border-color 0.2s ease;
+}
+
+.ar-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.12);
+}
+
+.ar-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* ── Checkbox row ───────────────────────────────────────── */
+.ar-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.ar-checkbox-row input[type="checkbox"] {
+  accent-color: var(--color-primary);
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Choice items ────────────────────────────────────────── */
+.ar-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ar-choice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: var(--bg-surface);
+}
+
+.ar-choice-item:hover {
+  border-color: var(--border-default);
+  background: var(--bg-surface-secondary);
+}
+
+.ar-choice-item.selected {
+  border-color: var(--color-primary);
+  background: rgba(26, 115, 232, 0.04);
+}
+
+.ar-choice-item input[type="checkbox"],
+.ar-choice-item input[type="radio"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+}
+
+.ar-choice-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ar-choice-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ar-choice-desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+/* ── Risk assessment box ─────────────────────────────────── */
+.ar-risk-box {
+  padding: 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-secondary);
+}
+
+.ar-risk-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ar-risk-level {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ar-risk-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 8px 0 0;
+}
+
+/* ── Review tags ─────────────────────────────────────────── */
+.ar-review-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ar-review-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+}
+
+.ar-review-tag.pending {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: rgba(26, 115, 232, 0.06);
+}
+
+/* ── Actions bar — left-aligned like Ariane ──────────────── */
+.ar-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ── Info banner at bottom ───────────────────────────────── */
+.ar-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 0;
+  margin-top: 8px;
+}
+
+.ar-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ar-info-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ar-info-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .ar-two-col {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .ar-section-body {
+    margin-left: 0;
+    padding-left: 16px;
+  }
 }
 

@@ -22,10 +22,13 @@ src/
 │   ├── owned/page.tsx      # "Owned by you" view
 │   ├── reviews/page.tsx    # "Pending your approval" view
 │   └── launches/
-│       ├── new/page.tsx    # Create launch form
-│       └── [id]/page.tsx   # Launch detail view
+│       ├── new/page.tsx    # Create launch form (uses LaunchForm)
+│       └── [id]/
+│           ├── page.tsx    # Launch detail view
+│           └── edit/page.tsx # Edit launch form (uses LaunchForm)
 ├── components/             # Reusable UI components
 │   ├── DataTable.tsx       # Generic table (ColumnDef, TableToolbar, SectionHeader)
+│   ├── LaunchForm.tsx      # Shared create/edit form (questionnaire, risk, actions)
 │   ├── Sidebar.tsx         # App sidebar navigation
 │   └── TopBar.tsx          # Global header bar
 ├── contexts/               # React contexts (client-side only)
