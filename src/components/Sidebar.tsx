@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useSidebar } from '@/contexts/SidebarContext';
 import type { User } from '@/lib/types';
@@ -12,6 +12,8 @@ interface SidebarProps {
 
 export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const params = useSearchParams();
+  const searchParams = params.get('status') || '';
   const { collapsed } = useSidebar();
   const [pastExpanded, setPastExpanded] = useState(false);
   const [teamsExpanded, setTeamsExpanded] = useState(false);
@@ -77,6 +79,28 @@ export default function Sidebar({ user }: SidebarProps) {
               <span className={`sidebar-section-chevron ${pastExpanded ? 'expanded' : ''}`}>▸</span>
               <span>Past launches</span>
             </div>
+            {pastExpanded && (
+              <div className="sidebar-section-children">
+                <Link
+                  href="/owned?status=LAUNCHED"
+                  className={`nav-link sidebar-child-link ${pathname === '/owned' && searchParams === 'LAUNCHED' ? 'active' : ''}`}
+                >
+                  Launched
+                </Link>
+                <Link
+                  href="/owned?status=LAUNCHED_WITH_EXCEPTION"
+                  className={`nav-link sidebar-child-link ${pathname === '/owned' && searchParams === 'LAUNCHED_WITH_EXCEPTION' ? 'active' : ''}`}
+                >
+                  Exception
+                </Link>
+                <Link
+                  href="/owned?status=CANCELLED"
+                  className={`nav-link sidebar-child-link ${pathname === '/owned' && searchParams === 'CANCELLED' ? 'active' : ''}`}
+                >
+                  Cancelled
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="sidebar-section">

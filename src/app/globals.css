@@ -1156,6 +1156,18 @@ a:hover { color: var(--link-color-hover); }
   color: var(--text-primary);
 }
 
+.sidebar-section-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-child-link {
+  padding-left: 52px !important;
+  font-size: 13px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+}
+
 /* --- Cards (Flat white, #dadce0 border) --- */
 .card {
   background: var(--bg-surface);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DataTable, TableToolbar } from '@/components/DataTable';
 import { getOwnedColumns } from '@/components/columns';
 import type { Launch } from '@/lib/types';
@@ -38,7 +39,9 @@ function getSortValue(launch: Launch, key: string): string | number {
 }
 
 export default function OwnedClient({ launches }: { launches: Launch[] }) {
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const params = useSearchParams();
+  const initialStatus = params.get('status') || 'ALL';
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus);
   const [sortField, setSortField] = useState('target_date');
   const [sortAsc, setSortAsc] = useState(false);
 
