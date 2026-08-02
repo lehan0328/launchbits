@@ -108,6 +108,7 @@ export interface Organization {
   policy_rules: string; // YAML
   slack_bot_token_encrypted: string | null;
   slack_team_id: string | null;
+  github_app_installation_id: number | null;
   created_at: string;
 }
 

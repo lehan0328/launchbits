@@ -23,6 +23,7 @@ import { canReview, canDowngradeToFyi, canManagePolicies } from '@/lib/permissio
 import { assertValidTransition } from '@/lib/state-machine';
 import { isBlockingReview } from '@/lib/utils';
 import { notifyReviewRequested, notifyReviewCompleted } from '@/server/slack-notifications';
+import { syncCheckRun } from '@/server/github-checks';
 import type { LaunchFormData, ReviewStatus } from '@/lib/types';
 
 // ── Create Launch ───────────────────────────────────────────────────────────
@@ -182,6 +183,9 @@ export async function submitForReviewAction(launchId: string, formData: LaunchFo
   const createdReviews = await getReviewsForLaunch(launchId);
   void notifyReviewRequested(user.org_id, updated, createdReviews, user.display_name);
 
+  // GitHub: create/update check run (fire-and-forget)
+  void syncCheckRun(launchId);
+
   revalidatePath('/');
   revalidatePath('/reviews');
   redirect(`/launches/${launchId}`);
@@ -239,6 +243,9 @@ export async function approveReviewAction(reviewId: string, notes: string) {
     'approved', user.display_name, ownerData || '', notes || null,
   );
 
+  // GitHub: update check run (fire-and-forget)
+  void syncCheckRun(launch.id);
+
   revalidatePath(`/launches/${launch.id}`);
   revalidatePath('/');
   revalidatePath('/reviews');
@@ -285,6 +292,9 @@ export async function requestChangesAction(reviewId: string, notes: string) {
     { ...review, label: review.label } as Parameters<typeof notifyReviewCompleted>[2],
     'denied', user.display_name, ownerEmail || '', notes,
   );
+
+  // GitHub: update check run (fire-and-forget)
+  void syncCheckRun(launch.id);
 
   revalidatePath(`/launches/${launch.id}`);
   revalidatePath('/');
@@ -519,6 +529,25 @@ export async function disconnectSlackAction() {
   await supabase
     .from('organizations')
     .update({ slack_bot_token_encrypted: null, slack_team_id: null })
+    .eq('id', user.org_id);
+
+  revalidatePath('/settings');
+}
+
+// ── Disconnect GitHub ───────────────────────────────────────────────────────
+
+export async function disconnectGitHubAction() {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  if (!canManagePolicies(user)) {
+    throw new Error('Only admins can manage integrations');
+  }
+
+  const supabase = await createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from('organizations') as any)
+    .update({ github_app_installation_id: null })
     .eq('id', user.org_id);
 
   revalidatePath('/settings');

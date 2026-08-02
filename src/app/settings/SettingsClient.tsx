@@ -375,10 +375,22 @@ function IntegrationsSection({ org }: { org: Organization }) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.launchbits.dev';
   const slackOauthUrl = `https://slack.com/oauth/v2/authorize?client_id=${slackClientId}&scope=chat:write,chat:write.public,users:read,users:read.email&redirect_uri=${encodeURIComponent(`${appUrl}/api/slack/oauth`)}`;
 
+  // GitHub
+  const githubConnected = !!org.github_app_installation_id;
+  const githubAppSlug = process.env.NEXT_PUBLIC_GITHUB_APP_SLUG || 'launchbits';
+  const githubInstallUrl = `https://github.com/apps/${githubAppSlug}/installations/new`;
+
   const handleDisconnect = () => {
     startTransition(async () => {
       const { disconnectSlackAction } = await import('@/app/actions');
       await disconnectSlackAction();
+    });
+  };
+
+  const handleDisconnectGitHub = () => {
+    startTransition(async () => {
+      const { disconnectGitHubAction } = await import('@/app/actions');
+      await disconnectGitHubAction();
     });
   };
 
@@ -417,14 +429,33 @@ function IntegrationsSection({ org }: { org: Organization }) {
           )}
         </div>
 
-        {/* GitHub — not yet implemented */}
+        {/* GitHub — live */}
         <div className="ar-integration-row">
           <span className="ar-integration-icon"><GitHubLogo /></span>
           <div className="ar-integration-info">
-            <div className="ar-integration-name">GitHub</div>
+            <div className="ar-integration-name">
+              GitHub
+              {githubConnected && <span className="tag tag-approved" style={{ marginLeft: 8 }}>Connected</span>}
+            </div>
             <div className="ar-integration-desc">Block PR merges until all review bits are green via Check Runs.</div>
           </div>
-          <button className="btn btn-secondary btn-sm" disabled>Install App</button>
+          {githubConnected ? (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleDisconnectGitHub}
+              disabled={isPending}
+            >
+              {isPending ? 'Disconnecting…' : 'Disconnect'}
+            </button>
+          ) : (
+            <a
+              href={githubInstallUrl}
+              className="btn btn-primary btn-sm"
+              style={{ textDecoration: 'none' }}
+            >
+              Install App
+            </a>
+          )}
         </div>
 
         {/* Email — not yet implemented */}
