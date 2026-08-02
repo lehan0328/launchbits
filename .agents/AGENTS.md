@@ -39,3 +39,22 @@
 - **RLS chicken-and-egg**: New users can't query anything through the anon client because `user_org_id()` returns NULL before the user row exists. The admin client handles provisioning.
 - **Env var naming**: `NEXT_PUBLIC_*` = exposed to browser. `SUPABASE_SERVICE_ROLE_KEY` = server-only, NEVER prefixed with `NEXT_PUBLIC_`.
 - **Env vars needed**: `.env.local` (local), Vercel env vars (production), GitHub Secrets (CI).
+
+## Mandatory Pre-Work
+
+Before making ANY code changes to this project, read the relevant skills files:
+
+1. **Before CSS/UI changes**: Read `.agents/skills/launchbits-design-system/SKILL.md`
+   - Use design token variables, never hardcoded hex colors
+   - Use spacing variables (`--sp-*`), never raw px values
+   - Use the correct token names (check `:root` definitions in `globals.css`)
+   - Follow component patterns (buttons, cards, tables, forms)
+
+2. **Before backend/architecture changes**: Read `.agents/skills/launchbits-codebase/SKILL.md`
+   - Follow the server/lib/components directory split
+   - Use established patterns for new queries, mutations, and pages
+   - Reference the design doc for business logic decisions
+
+3. **Before any changes**: Read `.agents/AGENTS.md` for project rules
+
+Skipping this step leads to inconsistent code that requires rework.
