@@ -2920,95 +2920,59 @@ a:hover { color: var(--link-color-hover); }
   margin-top: var(--sp-4);
 }
 
-/* ====== FILTER BAR (GM3 Filter Chip pattern) ====== */
+/* ====== OWNED TOOLBAR (Ariane-style filter dropdown) ====== */
 
-.filter-bar {
+.owned-toolbar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 4px 12px;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 8px 12px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   margin-bottom: var(--sp-4);
-  box-sizing: border-box;
 }
 
-.filter-bar-item {
-  display: inline-flex;
+.owned-toolbar-filters {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  height: 32px;
-  padding: 0 12px;
-  font-size: 14px;
+  gap: var(--sp-2);
+}
+
+.owned-toolbar-label {
+  font-size: 13px;
   font-weight: 500;
-  font-family: var(--font-heading);
-  line-height: 20px;
-  letter-spacing: 0.1px;
   color: var(--text-secondary);
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  user-select: none;
+  font-family: var(--font-heading);
   white-space: nowrap;
 }
 
-.filter-bar-item:hover {
-  background: rgba(0, 0, 0, 0.04);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+.owned-toolbar-select {
+  padding: 5px 10px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  min-width: 160px;
 }
 
-.filter-bar-item--active {
-  background: var(--indigo-50);
-  border-color: transparent;
-  color: var(--indigo-700);
+.owned-toolbar-select:hover {
+  border-color: var(--indigo-400);
 }
 
-.filter-bar-item--active:hover {
-  background: var(--indigo-100);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+.owned-toolbar-select:focus {
+  outline: none;
+  border-color: var(--indigo-500);
+  box-shadow: 0 0 0 2px var(--indigo-50);
 }
 
-/* Status indicator dot (8px) */
-.filter-bar-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.filter-bar-dot--draft     { background: var(--status-draft-text); }
-.filter-bar-dot--review    { background: var(--status-pending-text); }
-.filter-bar-dot--approved  { background: var(--status-approved-text); }
-.filter-bar-dot--launched  { background: var(--status-purple-text); }
-.filter-bar-dot--exception { background: var(--status-warning-text); }
-.filter-bar-dot--cancelled { background: var(--status-blocked-text); }
-
-/* Count badge (pill) */
-.filter-bar-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  margin-left: -2px;
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
-  letter-spacing: 0.5px;
-  background: var(--bg-muted);
+.owned-toolbar-count {
+  font-size: 12px;
   color: var(--text-tertiary);
+  white-space: nowrap;
 }
-
-.filter-bar-item--active .filter-bar-count {
-  background: var(--indigo-100);
-  color: var(--indigo-700);
-}
-
 
