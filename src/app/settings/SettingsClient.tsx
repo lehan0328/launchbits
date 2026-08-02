@@ -1,17 +1,13 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import type { Organization, User, ReviewDefinition } from '@/lib/types';
 
-type SettingsTab = 'general' | 'reviews' | 'policies' | 'team' | 'integrations';
-
-const TABS: { id: SettingsTab; label: string; icon: string }[] = [
-  { id: 'general', label: 'General', icon: '⚙' },
-  { id: 'reviews', label: 'Review Types', icon: '✓' },
-  { id: 'policies', label: 'Policy Rules', icon: '📋' },
-  { id: 'team', label: 'Team', icon: '👥' },
-  { id: 'integrations', label: 'Integrations', icon: '🔗' },
-];
+// ============================================================================
+// Settings — single-page, multi-section layout
+// Reuses the Ariane section pattern (ar-section, ar-section-header, etc.)
+// so Settings visually matches the Launch form experience.
+// ============================================================================
 
 interface SettingsClientProps {
   org: Organization;
@@ -20,103 +16,132 @@ interface SettingsClientProps {
 }
 
 export default function SettingsClient({ org, user, reviewDefs }: SettingsClientProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-
   return (
-    <div className="app-content">
-      <h1 className="page-title" style={{ marginBottom: 24 }}>Settings</h1>
+    <>
+      <header className="app-header">
+        <span className="app-header-title">Settings</span>
+      </header>
 
-      <div className="settings-layout">
-        {/* Sidebar Navigation */}
-        <nav className="settings-nav">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              className={`settings-nav-item ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="settings-nav-icon">{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+      <div className="app-content">
 
-        {/* Content Area */}
-        <div className="settings-content">
-          {activeTab === 'general' && (
-            <GeneralSettings orgName={org.name} orgSlug={org.slug} />
-          )}
-          {activeTab === 'reviews' && (
-            <ReviewSettings reviewDefs={reviewDefs} />
-          )}
-          {activeTab === 'policies' && (
-            <PolicySettings />
-          )}
-          {activeTab === 'team' && (
-            <TeamSettings users={[user]} />
-          )}
-          {activeTab === 'integrations' && (
-            <IntegrationSettings />
-          )}
+        {/* ── Section 1: Organization ── */}
+        <div className="ar-section">
+          <div className="ar-section-header">
+            <span className="ar-check-icon">⚙</span>
+            <div>
+              <div className="ar-section-title">Organization</div>
+              <div className="ar-section-subtitle">Manage your organization identity and branding</div>
+            </div>
+          </div>
+          <div className="ar-section-body">
+            <div className="ar-two-col">
+              <div className="ar-col">
+                <div className="ar-field">
+                  <label className="ar-label">Organization Name</label>
+                  <input type="text" className="ar-input" defaultValue={org.name} disabled />
+                </div>
+                <div className="ar-field">
+                  <label className="ar-label">Slug</label>
+                  <input type="text" className="ar-input ar-input-short" defaultValue={org.slug} disabled />
+                </div>
+              </div>
+              <div className="ar-col">
+                <div className="ar-field">
+                  <label className="ar-label">Status</label>
+                  <p className="ar-hint">Organization settings will be editable in a future update.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* ── Section 2: Review Types ── */}
+        <ReviewTypesSection reviewDefs={reviewDefs} />
+
+        {/* ── Section 3: Policy Rules ── */}
+        <div className="ar-section">
+          <div className="ar-section-header">
+            <span className="ar-check-icon outline">📋</span>
+            <div>
+              <div className="ar-section-title">Policy Rules</div>
+              <div className="ar-section-subtitle">Rules determine which reviews are triggered based on questionnaire answers and risk level</div>
+            </div>
+          </div>
+          <div className="ar-section-body">
+            <div className="ar-field">
+              <label className="ar-label">Active Policy Configuration</label>
+              <pre className="ar-code-block">
+{`- review_type: PRIVACY
+  trigger_when:
+    any_of:
+      - field: q_data_classes
+        contains_any: [DATA_CONTENT, DATA_FINANCIAL, DATA_BIOMETRICS]
+  risk_overrides:
+    LOW:    { default_status: FYI }
+    MEDIUM: { default_status: PENDING_REVIEW }
+    HIGH:   { default_status: PENDING_REVIEW, fyi_allowed: false }`}
+              </pre>
+            </div>
+            <div className="ar-info-banner">
+              <span className="ar-info-icon">ℹ</span>
+              <span>
+                Currently defined programmatically in <code className="ar-inline-code">rules-engine.ts</code>.
+                A visual policy editor is planned for v1.0.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Section 4: Team ── */}
+        <TeamSection users={[user]} />
+
+        {/* ── Section 5: Integrations ── */}
+        <IntegrationsSection />
+
       </div>
-    </div>
+    </>
   );
 }
 
-// --- Sub-sections ---
+// ============================================================================
+// Section 2: Review Types
+// ============================================================================
 
-function GeneralSettings({ orgName, orgSlug }: { orgName: string; orgSlug: string }) {
-  return (
-    <div>
-      <h2 className="page-subtitle" style={{ marginBottom: 16 }}>Organization</h2>
-      <div className="settings-card">
-        <div className="settings-field">
-          <label className="form-label">Organization Name</label>
-          <input type="text" className="form-input" defaultValue={orgName} disabled />
-        </div>
-        <div className="settings-field">
-          <label className="form-label">Slug</label>
-          <input type="text" className="form-input" defaultValue={orgSlug} disabled />
-        </div>
-        <p className="text-sm" style={{ color: 'var(--text-tertiary)', marginTop: 8 }}>
-          Organization settings will be editable in a future update.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function ReviewSettings({ reviewDefs }: { reviewDefs: ReviewDefinition[] }) {
+function ReviewTypesSection({ reviewDefs }: { reviewDefs: ReviewDefinition[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 className="page-subtitle">Review Types</h2>
-        <button className="btn btn-primary" disabled>+ Add Review Type</button>
+    <div className="ar-section">
+      <div className="ar-section-header">
+        <span className="ar-check-icon">✓</span>
+        <div>
+          <div className="ar-section-title">Review Types</div>
+          <div className="ar-section-subtitle">Configure review categories, SLOs, and allowed reviewer pools</div>
+        </div>
       </div>
-      <table className="data-table" style={{ width: '100%' }}>
-        <thead>
-          <tr>
-            <th>Label</th>
-            <th>Type</th>
-            <th>SLO</th>
-            <th>Reviewers</th>
-            <th>Flags</th>
-          </tr>
-        </thead>
-        <tbody>
-          {reviewDefs.map(rd => (
-            <ReviewDefRow
-              key={rd.id}
-              rd={rd}
-              isExpanded={expandedId === rd.id}
-              onToggle={() => setExpandedId(expandedId === rd.id ? null : rd.id)}
-            />
-          ))}
-        </tbody>
-      </table>
+      <div className="ar-section-body">
+        <table className="data-table" style={{ width: '100%' }}>
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Type</th>
+              <th>SLO</th>
+              <th>Reviewers</th>
+              <th>Flags</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reviewDefs.map(rd => (
+              <ReviewDefRow
+                key={rd.id}
+                rd={rd}
+                isExpanded={expandedId === rd.id}
+                onToggle={() => setExpandedId(expandedId === rd.id ? null : rd.id)}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -128,32 +153,30 @@ function ReviewDefRow({ rd, isExpanded, onToggle }: {
 }) {
   return (
     <>
-      <tr className="settings-review-row" onClick={onToggle}>
-        <td style={{ fontWeight: 500 }}>{rd.label}</td>
+      <tr className="settings-review-row" onClick={onToggle} style={{ cursor: 'pointer' }}>
+        <td className="font-medium">{rd.label}</td>
         <td>
-          <span className="status-tag" style={{ background: 'var(--status-fyi-bg)', color: 'var(--status-fyi-text)', border: '1px solid var(--status-fyi-border)' }}>
-            {rd.review_type}
-          </span>
+          <span className="review-status-tag review-status-tag--fyi">{rd.review_type}</span>
         </td>
         <td>{rd.slo_days}d{rd.slo_business_days_only ? ' (biz)' : ''}</td>
         <td>
           {rd.reviewer_emails.length > 0 ? (
-            <span className="settings-reviewer-count">{rd.reviewer_emails.length} reviewer{rd.reviewer_emails.length !== 1 ? 's' : ''}</span>
+            <span>{rd.reviewer_emails.length} reviewer{rd.reviewer_emails.length !== 1 ? 's' : ''}</span>
           ) : (
-            <span className="text-muted text-sm">Anyone</span>
+            <span className="text-secondary text-sm">Anyone</span>
           )}
         </td>
         <td>
           <span className="text-sm">
-            {rd.access_restricted ? '🔒 ' : ''}
-            {rd.owner_approval_disallowed ? '🚫 ' : ''}
-            {rd.fyi_allowed ? 'FYI ' : ''}
-            {!rd.access_restricted && !rd.owner_approval_disallowed && !rd.fyi_allowed ? '—' : ''}
+            {rd.access_restricted && '🔒 '}
+            {rd.owner_approval_disallowed && '🚫 '}
+            {rd.fyi_allowed && 'FYI '}
+            {!rd.access_restricted && !rd.owner_approval_disallowed && !rd.fyi_allowed && '—'}
           </span>
         </td>
       </tr>
       {isExpanded && (
-        <tr className="settings-review-expand-row">
+        <tr>
           <td colSpan={5}>
             <ReviewerEmailEditor reviewDefId={rd.id} initialEmails={rd.reviewer_emails} />
           </td>
@@ -169,6 +192,7 @@ function ReviewerEmailEditor({ reviewDefId, initialEmails }: { reviewDefId: stri
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const hasChanges = JSON.stringify(emails) !== JSON.stringify(initialEmails);
 
@@ -216,11 +240,8 @@ function ReviewerEmailEditor({ reviewDefId, initialEmails }: { reviewDefId: stri
 
   return (
     <div className="settings-review-expand-panel">
-      <label className="form-label">Allowed Reviewers</label>
-      <div className="chip-input-container" onClick={() => {
-        const input = document.getElementById(`chip-input-${reviewDefId}`);
-        if (input) input.focus();
-      }}>
+      <label className="ar-label">Allowed Reviewers</label>
+      <div className="chip-input-container" onClick={() => inputRef.current?.focus()}>
         {emails.map(email => (
           <span key={email} className="chip">
             {email}
@@ -235,7 +256,7 @@ function ReviewerEmailEditor({ reviewDefId, initialEmails }: { reviewDefId: stri
           </span>
         ))}
         <input
-          id={`chip-input-${reviewDefId}`}
+          ref={inputRef}
           type="email"
           className="chip-text-input"
           placeholder={emails.length === 0 ? 'Type email and press Enter...' : 'Add another...'}
@@ -246,7 +267,7 @@ function ReviewerEmailEditor({ reviewDefId, initialEmails }: { reviewDefId: stri
         />
       </div>
       {error && <div className="review-action-error" style={{ marginTop: 8 }}>{error}</div>}
-      <div className="settings-reviewer-actions">
+      <div className="ar-actions" style={{ marginTop: 12 }}>
         <button
           className="btn btn-primary btn-sm"
           onClick={handleSave}
@@ -255,7 +276,7 @@ function ReviewerEmailEditor({ reviewDefId, initialEmails }: { reviewDefId: stri
           {isPending ? 'Saving...' : saved ? '✓ Saved' : 'Save Reviewers'}
         </button>
         {emails.length === 0 && (
-          <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+          <span className="text-sm text-secondary">
             No restrictions — any reviewer can approve
           </span>
         )}
@@ -264,110 +285,87 @@ function ReviewerEmailEditor({ reviewDefId, initialEmails }: { reviewDefId: stri
   );
 }
 
-function PolicySettings() {
-  return (
-    <div>
-      <h2 className="page-subtitle" style={{ marginBottom: 16 }}>Policy Rules</h2>
-      <div className="settings-card">
-        <p className="text-sm" style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>
-          Policy rules determine which reviews are automatically triggered based on questionnaire answers and risk level.
-          Currently configured in <code style={{ fontFamily: 'var(--font-code)', background: 'var(--bg-surface-container)', padding: '2px 6px', borderRadius: 4 }}>rules-engine.ts</code>.
-        </p>
-        <div style={{ background: 'var(--bg-surface-container)', borderRadius: 'var(--radius-md)', padding: 16, fontFamily: 'var(--font-code)', fontSize: 13, lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-{`# YAML policy editor coming in v1.0
-# Current rules are defined programmatically
+// ============================================================================
+// Section 4: Team
+// ============================================================================
 
-- review_type: PRIVACY
-  trigger_when:
-    any_of:
-      - field: q_data_classes
-        contains_any: [DATA_CONTENT, DATA_FINANCIAL, DATA_BIOMETRICS]
-  risk_overrides:
-    LOW:    { default_status: FYI }
-    MEDIUM: { default_status: PENDING_REVIEW }
-    HIGH:   { default_status: PENDING_REVIEW, fyi_allowed: false }`}
+function TeamSection({ users }: { users: User[] }) {
+  return (
+    <div className="ar-section">
+      <div className="ar-section-header">
+        <span className="ar-check-icon outline">👥</span>
+        <div>
+          <div className="ar-section-title">Team Members</div>
+          <div className="ar-section-subtitle">Manage who has access to your organization</div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function TeamSettings({ users }: { users: User[] }) {
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 className="page-subtitle">Team Members</h2>
-        <button className="btn btn-primary" disabled>+ Invite Member</button>
-      </div>
-      <table className="data-table" style={{ width: '100%' }}>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(u => (
-            <tr key={u.id}>
-              <td style={{ fontWeight: 500 }}>{u.display_name}</td>
-              <td>{u.email}</td>
-              <td>
-                <span className="status-tag" style={{
-                  background: u.role === 'admin' ? 'var(--status-pending-bg)' : 'var(--status-fyi-bg)',
-                  color: u.role === 'admin' ? 'var(--status-pending-text)' : 'var(--status-fyi-text)',
-                  border: `1px solid ${u.role === 'admin' ? 'var(--status-pending-border)' : 'var(--status-fyi-border)'}`,
-                }}>
-                  {u.role}
-                </span>
-              </td>
+      <div className="ar-section-body">
+        <table className="data-table" style={{ width: '100%' }}>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Email</th>
+              <th>Role</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id}>
+                <td>
+                  <span className="ar-member-row">
+                    <span className="ar-member-avatar">{u.display_name.charAt(0).toUpperCase()}</span>
+                    <span className="font-medium">{u.display_name}</span>
+                  </span>
+                </td>
+                <td className="text-secondary">{u.email}</td>
+                <td>
+                  <span className={`review-status-tag ${u.role === 'admin' ? 'review-status-tag--pending' : 'review-status-tag--fyi'}`}>
+                    {u.role}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="ar-actions" style={{ marginTop: 16 }}>
+          <button className="btn btn-secondary btn-sm" disabled>+ Invite Member</button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function IntegrationSettings() {
+// ============================================================================
+// Section 5: Integrations
+// ============================================================================
+
+const INTEGRATIONS = [
+  { name: 'Slack', desc: 'Send review requests and receive approvals directly in Slack.', action: 'Connect', icon: '💬' },
+  { name: 'GitHub', desc: 'Block PR merges until all review bits are green via Check Runs.', action: 'Install App', icon: '🐙' },
+  { name: 'Email (Resend)', desc: 'Fallback notifications for users not on Slack.', action: 'Configure', icon: '✉️' },
+];
+
+function IntegrationsSection() {
   return (
-    <div>
-      <h2 className="page-subtitle" style={{ marginBottom: 16 }}>Integrations</h2>
-
-      <div className="settings-card" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Slack</h3>
-            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-              Send review requests and receive approvals directly in Slack.
-            </p>
-          </div>
-          <button className="btn" disabled>Connect</button>
+    <div className="ar-section">
+      <div className="ar-section-header">
+        <span className="ar-check-icon outline">🔗</span>
+        <div>
+          <div className="ar-section-title">Integrations</div>
+          <div className="ar-section-subtitle">Connect external services to automate notifications and enforce policies</div>
         </div>
       </div>
-
-      <div className="settings-card" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>GitHub</h3>
-            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-              Block PR merges until all review bits are green via Check Runs.
-            </p>
+      <div className="ar-section-body">
+        {INTEGRATIONS.map(int => (
+          <div key={int.name} className="ar-integration-row">
+            <span className="ar-integration-icon">{int.icon}</span>
+            <div className="ar-integration-info">
+              <div className="ar-integration-name">{int.name}</div>
+              <div className="ar-integration-desc">{int.desc}</div>
+            </div>
+            <button className="btn btn-secondary btn-sm" disabled>{int.action}</button>
           </div>
-          <button className="btn" disabled>Install App</button>
-        </div>
-      </div>
-
-      <div className="settings-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Email (Resend)</h3>
-            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-              Fallback notifications for users not on Slack.
-            </p>
-          </div>
-          <button className="btn" disabled>Configure</button>
-        </div>
+        ))}
       </div>
     </div>
   );
