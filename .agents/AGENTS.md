@@ -58,3 +58,15 @@ Before making ANY code changes to this project, read the relevant skills files:
 3. **Before any changes**: Read `.agents/AGENTS.md` for project rules
 
 Skipping this step leads to inconsistent code that requires rework.
+
+## Testing
+
+When adding or modifying code in `src/lib/` or `src/app/actions.ts`, you **must** add or update corresponding tests:
+
+- **Pure logic** (`src/lib/`): Add tests in `src/lib/__tests__/<module>.test.ts`
+  - State machine transitions, permission checks, risk calculations, rules engine triggers
+  - These are pure functions with no I/O — test them directly, no mocking needed
+- **Server actions** (`src/app/actions.ts`): Add tests with mocked Supabase client
+  - Cover the happy path, auth failures, invalid state transitions, and audit event logging
+- **Run tests before committing**: `npm run test:ci` (or `npm test` for watch mode)
+- **CI enforces tests**: The GitHub Actions pipeline runs `test:ci` on every push and PR
