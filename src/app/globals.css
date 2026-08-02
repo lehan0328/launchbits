@@ -651,14 +651,14 @@ a:hover { color: var(--link-color-hover); }
 }
 
 .review-actions-panel {
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 4px 0 8px;
+  background: var(--bg-surface-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--sp-3) var(--sp-4);
+  margin: var(--sp-1) 0 var(--sp-2);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--sp-3);
   animation: slideDown 0.15s ease-out;
 }
 
@@ -669,13 +669,13 @@ a:hover { color: var(--link-color-hover); }
 
 .review-notes-input {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-primary);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
   color: var(--text-primary);
   font-size: 13px;
-  font-family: inherit;
+  font-family: var(--font-body);
   resize: vertical;
   min-height: 48px;
   transition: border-color 0.15s;
@@ -693,41 +693,44 @@ a:hover { color: var(--link-color-hover); }
 
 .review-actions-buttons {
   display: flex;
-  gap: 8px;
+  gap: var(--sp-2);
   flex-wrap: wrap;
 }
 
 .review-action-error {
   font-size: 12px;
-  color: #ef4444;
-  padding: 4px 0;
+  color: var(--status-blocked-text);
+  padding: var(--sp-1) 0;
 }
 
+/* Approve button — uses approved status color system */
 .btn-approve {
-  background: #059669;
+  background: var(--status-approved-border);
   color: white;
   border: none;
 }
 .btn-approve:hover:not(:disabled) {
-  background: #047857;
+  background: var(--status-approved-text);
 }
 
+/* Request Changes button — uses warning status color system */
 .btn-request-changes {
-  background: #d97706;
+  background: var(--status-warning-text);
   color: white;
   border: none;
 }
 .btn-request-changes:hover:not(:disabled) {
-  background: #b45309;
+  background: var(--status-warning-border);
 }
 
+/* FYI button — uses FYI status color system */
 .btn-fyi {
-  background: var(--surface-tertiary);
+  background: var(--bg-surface-container);
   color: var(--text-secondary);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-default);
 }
 .btn-fyi:hover:not(:disabled) {
-  background: var(--surface-secondary);
+  background: var(--bg-surface-secondary);
 }
 
 .btn:disabled {
