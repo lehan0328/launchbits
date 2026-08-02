@@ -7,8 +7,10 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const launches = await getLaunches(user.org_id);
-  const pendingReviews = await getPendingReviewsForUser(user.org_id, user.id);
+  const [launches, pendingReviews] = await Promise.all([
+    getLaunches(user.org_id),
+    getPendingReviewsForUser(user.org_id, user.id),
+  ]);
 
   // Deduplicate by launch — multiple reviews can point to the same launch
   const seen = new Set<string>();

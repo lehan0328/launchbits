@@ -2374,6 +2374,14 @@ a:hover { color: var(--link-color-hover); }
   padding: var(--sp-2) 0;
 }
 
+.skeleton-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px 16px;
+  margin-bottom: var(--sp-2);
+}
+
 .skeleton-stat-card {
   padding: var(--sp-5);
   display: flex;
