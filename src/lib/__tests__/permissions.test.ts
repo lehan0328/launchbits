@@ -21,9 +21,9 @@ const makeUser = (overrides: Partial<User> = {}): User => ({
   org_id: 'org-1',
   email: 'test@example.com',
   display_name: 'Test User',
+  slack_user_id: null,
   avatar_url: null,
   role: 'member',
-  created_at: new Date().toISOString(),
   ...overrides,
 });
 
