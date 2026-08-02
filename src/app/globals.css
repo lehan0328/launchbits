@@ -1002,7 +1002,7 @@ a:hover { color: var(--link-color-hover); }
 }
 
 .app-content {
-  padding: 0 0 0 24px;
+  padding: var(--sp-5) var(--sp-6) 0 24px;
 }
 
 /* --- Logo (Google-style product logo) --- */
