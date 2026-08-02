@@ -11,6 +11,7 @@
 // ============================================================================
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type {
   Organization, User, Launch, LaunchReview,
   LaunchEvent, ReviewDefinition, ReviewWithLaunch,
@@ -39,16 +40,20 @@ export async function getCurrentUser(): Promise<User | null> {
   if (existingUser) return existingUser as User;
 
   // ── Auto-provision: create user on first login ──────────────────────────
+  // Uses the admin (service_role) client to bypass RLS — the anon client
+  // can't read organizations or insert users before the user exists.
   // For MVP (single-tenant), assign to the first organization found.
-  // Future: prompt for org invite code or org creation via /setup page.
-  const { data: defaultOrg } = await supabase
+  const admin = createAdminClient();
+
+  const { data: orgData } = await admin
     .from('organizations')
     .select('id')
     .limit(1)
     .single();
 
+  const defaultOrg = orgData as { id: string } | null;
+
   if (!defaultOrg) {
-    // No org exists — user cannot be provisioned yet
     console.warn('[auth] No organization found for auto-provisioning user:', authUser.email);
     return null;
   }
@@ -61,7 +66,8 @@ export async function getCurrentUser(): Promise<User | null> {
 
   const avatarUrl = authUser.user_metadata?.avatar_url || null;
 
-  const { data: newUser, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: newUserData, error } = await (admin as any)
     .from('users')
     .insert({
       org_id: defaultOrg.id,
@@ -78,8 +84,9 @@ export async function getCurrentUser(): Promise<User | null> {
     return null;
   }
 
+  const newUser = newUserData as User | null;
   console.log('[auth] Auto-provisioned new user:', newUser?.email);
-  return newUser as User;
+  return newUser;
 }
 
 /** Get user by ID. */
