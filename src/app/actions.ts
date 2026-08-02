@@ -13,11 +13,12 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/server/supabase';
 import {
   getCurrentUser, createLaunch, updateLaunch, addEvent, addReview,
-  getReviewDefinitions, updateReview, getLaunchById, getReviewsForLaunch,
+  getReviewDefinitions, updateReview, updateReviewDefinition,
+  getLaunchById, getReviewsForLaunch,
 } from '@/server/db';
 import { calculateRiskLevel } from '@/lib/risk-calculator';
 import { evaluateRequiredReviews, DEFAULT_RULES } from '@/lib/rules-engine';
-import { canReview, canDowngradeToFyi } from '@/lib/permissions';
+import { canReview, canDowngradeToFyi, canManagePolicies } from '@/lib/permissions';
 import { assertValidTransition } from '@/lib/state-machine';
 import { isBlockingReview } from '@/lib/utils';
 import type { LaunchFormData, RiskLevel, ReviewStatus } from '@/lib/types';
@@ -324,6 +325,72 @@ async function getLaunchForReview(reviewId: string) {
 
   if (error || !data) return null;
   return getLaunchById(data.launch_id);
+}
+
+// ── Update Reviewer Emails (Admin) ─────────────────────────────────────────
+
+export async function updateReviewerEmailsAction(reviewDefId: string, emails: string[]) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  if (!canManagePolicies(user)) {
+    throw new Error('Only admins can manage reviewer lists');
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const cleanedEmails = emails.map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+  for (const email of cleanedEmails) {
+    if (!emailRegex.test(email)) {
+      throw new Error(`Invalid email format: ${email}`);
+    }
+  }
+
+  const updated = await updateReviewDefinition(reviewDefId, {
+    reviewer_emails: cleanedEmails,
+  });
+  if (!updated) throw new Error('Failed to update reviewer list');
+
+  revalidatePath('/settings');
+}
+
+// ── Claim Review (Per-Launch Assignment) ────────────────────────────────────
+
+export async function claimReviewAction(reviewId: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const launch = await getLaunchForReview(reviewId);
+  if (!launch) throw new Error('Launch not found');
+
+  const reviews = await getReviewsForLaunch(launch.id);
+  const review = reviews.find(r => r.id === reviewId);
+  if (!review) throw new Error('Review not found');
+
+  // Can only claim pending reviews that haven't been claimed
+  if (review.reviewed_by) {
+    throw new Error('This review has already been claimed');
+  }
+
+  // Check permission (includes reviewer_emails check)
+  if (!canReview(user, review, [launch.created_by], review.reviewer_emails ?? [])) {
+    throw new Error('You are not authorized to review this');
+  }
+
+  const updated = await updateReview(reviewId, {
+    reviewed_by: user.id,
+    reviewed_by_name: user.display_name,
+  });
+  if (!updated) throw new Error('Failed to claim review');
+
+  // Log audit event
+  await addEvent(launch.id, launch.version, 'REVIEW_CLAIMED', user.id, {
+    new_val: { review: review.label, claimed_by: user.display_name },
+  });
+
+  revalidatePath(`/launches/${launch.id}`);
+  revalidatePath('/');
+  revalidatePath('/reviews');
 }
 
 // ── Sign Out ────────────────────────────────────────────────────────────────

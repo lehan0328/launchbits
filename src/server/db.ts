@@ -359,6 +359,27 @@ export async function updateReview(
   return data as LaunchReview;
 }
 
+// ── Review Definitions (Mutations) ──────────────────────────────────────────
+
+export async function updateReviewDefinition(
+  id: string,
+  updates: Partial<ReviewDefinition>
+): Promise<ReviewDefinition | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('review_definitions')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('updateReviewDefinition error:', error);
+    return null;
+  }
+  return data as ReviewDefinition;
+}
+
 // ── Events (Audit Log) ─────────────────────────────────────────────────────
 
 export async function getAllEvents(orgId: string): Promise<LaunchEvent[]> {

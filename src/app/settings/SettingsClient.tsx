@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import type { Organization, User, ReviewDefinition } from '@/lib/types';
 
 type SettingsTab = 'general' | 'reviews' | 'policies' | 'team' | 'integrations';
@@ -88,6 +88,8 @@ function GeneralSettings({ orgName, orgSlug }: { orgName: string; orgSlug: strin
 }
 
 function ReviewSettings({ reviewDefs }: { reviewDefs: ReviewDefinition[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -100,24 +102,164 @@ function ReviewSettings({ reviewDefs }: { reviewDefs: ReviewDefinition[] }) {
             <th>Label</th>
             <th>Type</th>
             <th>SLO</th>
-            <th>FYI Allowed</th>
-            <th>Owner Self-Approve</th>
-            <th>Restricted</th>
+            <th>Reviewers</th>
+            <th>Flags</th>
           </tr>
         </thead>
         <tbody>
           {reviewDefs.map(rd => (
-            <tr key={rd.id}>
-              <td style={{ fontWeight: 500 }}>{rd.label}</td>
-              <td><span className="status-tag" style={{ background: 'var(--status-fyi-bg)', color: 'var(--status-fyi-text)', border: '1px solid var(--status-fyi-border)' }}>{rd.review_type}</span></td>
-              <td>{rd.slo_days}d{rd.slo_business_days_only ? ' (biz)' : ''}</td>
-              <td>{rd.fyi_allowed ? '✓' : '—'}</td>
-              <td>{rd.owner_approval_disallowed ? '🚫 Blocked' : '✓ Allowed'}</td>
-              <td>{rd.access_restricted ? '🔒 Yes' : '—'}</td>
-            </tr>
+            <ReviewDefRow
+              key={rd.id}
+              rd={rd}
+              isExpanded={expandedId === rd.id}
+              onToggle={() => setExpandedId(expandedId === rd.id ? null : rd.id)}
+            />
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ReviewDefRow({ rd, isExpanded, onToggle }: {
+  rd: ReviewDefinition;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <>
+      <tr className="settings-review-row" onClick={onToggle}>
+        <td style={{ fontWeight: 500 }}>{rd.label}</td>
+        <td>
+          <span className="status-tag" style={{ background: 'var(--status-fyi-bg)', color: 'var(--status-fyi-text)', border: '1px solid var(--status-fyi-border)' }}>
+            {rd.review_type}
+          </span>
+        </td>
+        <td>{rd.slo_days}d{rd.slo_business_days_only ? ' (biz)' : ''}</td>
+        <td>
+          {rd.reviewer_emails.length > 0 ? (
+            <span className="settings-reviewer-count">{rd.reviewer_emails.length} reviewer{rd.reviewer_emails.length !== 1 ? 's' : ''}</span>
+          ) : (
+            <span className="text-muted text-sm">Anyone</span>
+          )}
+        </td>
+        <td>
+          <span className="text-sm">
+            {rd.access_restricted ? '🔒 ' : ''}
+            {rd.owner_approval_disallowed ? '🚫 ' : ''}
+            {rd.fyi_allowed ? 'FYI ' : ''}
+            {!rd.access_restricted && !rd.owner_approval_disallowed && !rd.fyi_allowed ? '—' : ''}
+          </span>
+        </td>
+      </tr>
+      {isExpanded && (
+        <tr className="settings-review-expand-row">
+          <td colSpan={5}>
+            <ReviewerEmailEditor reviewDefId={rd.id} initialEmails={rd.reviewer_emails} />
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+function ReviewerEmailEditor({ reviewDefId, initialEmails }: { reviewDefId: string; initialEmails: string[] }) {
+  const [emails, setEmails] = useState<string[]>(initialEmails);
+  const [inputValue, setInputValue] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const hasChanges = JSON.stringify(emails) !== JSON.stringify(initialEmails);
+
+  function addEmail(value: string) {
+    const clean = value.trim().toLowerCase();
+    if (!clean) return;
+    if (emails.includes(clean)) {
+      setError(`${clean} is already in the list`);
+      return;
+    }
+    setEmails([...emails, clean]);
+    setInputValue('');
+    setError(null);
+    setSaved(false);
+  }
+
+  function removeEmail(email: string) {
+    setEmails(emails.filter(e => e !== email));
+    setSaved(false);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addEmail(inputValue);
+    }
+    if (e.key === 'Backspace' && !inputValue && emails.length > 0) {
+      removeEmail(emails[emails.length - 1]);
+    }
+  }
+
+  function handleSave() {
+    setError(null);
+    setSaved(false);
+    startTransition(async () => {
+      try {
+        const { updateReviewerEmailsAction } = await import('@/app/actions');
+        await updateReviewerEmailsAction(reviewDefId, emails);
+        setSaved(true);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to save');
+      }
+    });
+  }
+
+  return (
+    <div className="settings-review-expand-panel">
+      <label className="form-label">Allowed Reviewers</label>
+      <div className="chip-input-container" onClick={() => {
+        const input = document.getElementById(`chip-input-${reviewDefId}`);
+        if (input) input.focus();
+      }}>
+        {emails.map(email => (
+          <span key={email} className="chip">
+            {email}
+            <button
+              type="button"
+              className="chip-remove"
+              onClick={(e) => { e.stopPropagation(); removeEmail(email); }}
+              aria-label={`Remove ${email}`}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          id={`chip-input-${reviewDefId}`}
+          type="email"
+          className="chip-text-input"
+          placeholder={emails.length === 0 ? 'Type email and press Enter...' : 'Add another...'}
+          value={inputValue}
+          onChange={(e) => { setInputValue(e.target.value); setError(null); }}
+          onKeyDown={handleKeyDown}
+          onBlur={() => { if (inputValue.trim()) addEmail(inputValue); }}
+        />
+      </div>
+      {error && <div className="review-action-error" style={{ marginTop: 8 }}>{error}</div>}
+      <div className="settings-reviewer-actions">
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={handleSave}
+          disabled={!hasChanges || isPending}
+        >
+          {isPending ? 'Saving...' : saved ? '✓ Saved' : 'Save Reviewers'}
+        </button>
+        {emails.length === 0 && (
+          <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            No restrictions — any reviewer can approve
+          </span>
+        )}
+      </div>
     </div>
   );
 }

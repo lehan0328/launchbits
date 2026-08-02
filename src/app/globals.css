@@ -2687,3 +2687,132 @@ a:hover { color: var(--link-color-hover); }
   border: 1px solid rgba(234, 67, 53, 0.2);
 }
 
+/* ====== CHIP INPUT (Email Tags) ====== */
+
+.chip-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--bg-surface-container);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  min-height: 40px;
+  align-items: center;
+  cursor: text;
+}
+
+.chip-input-container:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.12);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px var(--sp-2) 2px var(--sp-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.chip-remove:hover {
+  background: rgba(234, 67, 53, 0.08);
+  color: #c5221f;
+}
+
+.chip-text-input {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  padding: var(--sp-1) 0;
+}
+
+.chip-text-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* ====== SETTINGS: Expandable Review Row ====== */
+
+.settings-review-row {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.settings-review-row:hover {
+  background: var(--bg-surface-hover);
+}
+
+.settings-review-expand-row td {
+  padding: 0 !important;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-review-expand-panel {
+  padding: var(--sp-4) var(--sp-6);
+  background: var(--bg-surface-secondary);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-review-expand-panel .form-label {
+  margin-bottom: var(--sp-2);
+}
+
+.settings-reviewer-actions {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  align-items: center;
+}
+
+.settings-reviewer-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ====== CLAIM REVIEW BUTTON ====== */
+
+.btn-claim {
+  font-size: 12px;
+  padding: 2px var(--sp-3);
+  height: 24px;
+  background: var(--color-primary-container);
+  color: var(--color-primary);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  border-radius: 999px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-claim:hover {
+  background: rgba(79, 70, 229, 0.15);
+  border-color: var(--color-primary);
+}

@@ -13,7 +13,7 @@ import {
   AUTH_LABELS, SHARING_LABELS, mapLabels,
 } from '@/lib/labels';
 import { canReview, canDowngradeToFyi } from '@/lib/permissions';
-import { approveReviewAction, requestChangesAction, markFyiAction } from '@/app/actions';
+import { approveReviewAction, requestChangesAction, markFyiAction, claimReviewAction } from '@/app/actions';
 
 // ============================================================================
 // Review status → CSS class mapping
@@ -380,9 +380,10 @@ function ReviewRow({ review, launchId, user, launchOwnerId }: { review: LaunchRe
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const userCanReview = canReview(user, review, [launchOwnerId]);
+  const userCanReview = canReview(user, review, [launchOwnerId], review.reviewer_emails ?? []);
   const userCanFyi = canDowngradeToFyi(user, review, [launchOwnerId]);
   const isPendingReview = isBlockingReview(review.status);
+  const canClaim = isPendingReview && !review.reviewed_by && userCanReview;
 
   function handleApprove() {
     setError(null);
@@ -443,6 +444,8 @@ function ReviewRow({ review, launchId, user, launchOwnerId }: { review: LaunchRe
               <span className="assignee-avatar">{getInitials(review.reviewed_by_name)}</span>
               {review.reviewed_by_name}
             </span>
+          ) : canClaim ? (
+            <ClaimButton reviewId={review.id} />
           ) : (
             <span className="text-muted text-sm">—</span>
           )}
@@ -505,6 +508,26 @@ function ReviewRow({ review, launchId, user, launchOwnerId }: { review: LaunchRe
         </tr>
       )}
     </>
+  );
+}
+
+function ClaimButton({ reviewId }: { reviewId: string }) {
+  const [isPending, startTransition] = useTransition();
+
+  function handleClaim() {
+    startTransition(async () => {
+      try {
+        await claimReviewAction(reviewId);
+      } catch (e) {
+        console.error('Failed to claim review:', e);
+      }
+    });
+  }
+
+  return (
+    <button className="btn-claim" onClick={handleClaim} disabled={isPending}>
+      {isPending ? '...' : 'Claim'}
+    </button>
   );
 }
 
