@@ -2920,58 +2920,63 @@ a:hover { color: var(--link-color-hover); }
   margin-top: var(--sp-4);
 }
 
-/* ====== FILTER BAR (Segmented toggle, Linear-style) ====== */
+/* ====== FILTER BAR (GM3 Filter Chip pattern) ====== */
 
 .filter-bar {
-  display: inline-flex;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  margin-bottom: var(--sp-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 4px 12px;
   background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  margin-bottom: var(--sp-4);
+  box-sizing: border-box;
 }
 
 .filter-bar-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
-  font-size: 13px;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
   font-weight: 500;
   font-family: var(--font-heading);
+  line-height: 20px;
+  letter-spacing: 0.1px;
   color: var(--text-secondary);
   background: transparent;
-  border: none;
-  border-right: 1px solid var(--border-default);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
   white-space: nowrap;
-  position: relative;
-}
-
-.filter-bar-item:last-child {
-  border-right: none;
 }
 
 .filter-bar-item:hover {
-  background: var(--bg-muted);
-  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .filter-bar-item--active {
   background: var(--indigo-50);
-  color: var(--indigo-600);
-  font-weight: 600;
+  border-color: transparent;
+  color: var(--indigo-700);
 }
 
 .filter-bar-item--active:hover {
   background: var(--indigo-100);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Status indicator dot inside filter items */
+/* Status indicator dot (8px) */
 .filter-bar-dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -2983,21 +2988,27 @@ a:hover { color: var(--link-color-hover); }
 .filter-bar-dot--exception { background: var(--status-warning-text); }
 .filter-bar-dot--cancelled { background: var(--status-blocked-text); }
 
-/* Count badge */
+/* Count badge (pill) */
 .filter-bar-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: -2px;
+  border-radius: 100px;
   font-size: 11px;
   font-weight: 600;
-  min-width: 18px;
-  text-align: center;
-  padding: 0 5px;
-  border-radius: var(--radius-pill);
+  line-height: 16px;
+  letter-spacing: 0.5px;
   background: var(--bg-muted);
   color: var(--text-tertiary);
-  line-height: 18px;
 }
 
 .filter-bar-item--active .filter-bar-count {
   background: var(--indigo-100);
   color: var(--indigo-700);
 }
+
 
