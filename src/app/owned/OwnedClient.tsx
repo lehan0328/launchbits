@@ -6,13 +6,13 @@ import { getOwnedColumns } from '@/components/columns';
 import type { Launch } from '@/lib/types';
 
 const STATUS_FILTERS = [
-  { value: 'ALL', label: 'All' },
-  { value: 'DRAFT', label: 'Draft' },
-  { value: 'IN_REVIEW', label: 'In Review' },
-  { value: 'APPROVED', label: 'Approved' },
-  { value: 'LAUNCHED', label: 'Launched' },
-  { value: 'LAUNCHED_WITH_EXCEPTION', label: 'Exception' },
-  { value: 'CANCELLED', label: 'Cancelled' },
+  { value: 'ALL', label: 'All', dot: '' },
+  { value: 'DRAFT', label: 'Draft', dot: 'filter-bar-dot--draft' },
+  { value: 'IN_REVIEW', label: 'In Review', dot: 'filter-bar-dot--review' },
+  { value: 'APPROVED', label: 'Approved', dot: 'filter-bar-dot--approved' },
+  { value: 'LAUNCHED', label: 'Launched', dot: 'filter-bar-dot--launched' },
+  { value: 'LAUNCHED_WITH_EXCEPTION', label: 'Exception', dot: 'filter-bar-dot--exception' },
+  { value: 'CANCELLED', label: 'Cancelled', dot: 'filter-bar-dot--cancelled' },
 ] as const;
 
 export default function OwnedClient({ launches }: { launches: Launch[] }) {
@@ -34,8 +34,8 @@ export default function OwnedClient({ launches }: { launches: Launch[] }) {
         <h1 className="page-title">Owned by you</h1>
       </div>
 
-      {/* Status filter chips */}
-      <div className="filter-chips">
+      {/* Status filter bar */}
+      <div className="filter-bar">
         {STATUS_FILTERS.map(f => {
           const count = f.value === 'ALL' ? launches.length : (statusCounts[f.value] || 0);
           // Hide filters with 0 count (except ALL and the active one)
@@ -43,11 +43,12 @@ export default function OwnedClient({ launches }: { launches: Launch[] }) {
           return (
             <button
               key={f.value}
-              className={`filter-chip ${activeFilter === f.value ? 'filter-chip--active' : ''}`}
+              className={`filter-bar-item ${activeFilter === f.value ? 'filter-bar-item--active' : ''}`}
               onClick={() => setActiveFilter(f.value)}
             >
+              {f.dot && <span className={`filter-bar-dot ${f.dot}`} />}
               {f.label}
-              <span className="filter-chip-count">{count}</span>
+              <span className="filter-bar-count">{count}</span>
             </button>
           );
         })}

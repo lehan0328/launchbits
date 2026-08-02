@@ -2920,53 +2920,84 @@ a:hover { color: var(--link-color-hover); }
   margin-top: var(--sp-4);
 }
 
-/* ====== FILTER CHIPS ====== */
+/* ====== FILTER BAR (Segmented toggle, Linear-style) ====== */
 
-.filter-chips {
-  display: flex;
-  gap: var(--sp-2);
+.filter-bar {
+  display: inline-flex;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
   margin-bottom: var(--sp-4);
-  flex-wrap: wrap;
+  background: var(--bg-surface);
 }
 
-.filter-chip {
+.filter-bar-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 7px 16px;
   font-size: 13px;
   font-weight: 500;
   font-family: var(--font-heading);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
   color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border-default);
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  position: relative;
 }
 
-.filter-chip:hover {
-  border-color: var(--indigo-500);
+.filter-bar-item:last-child {
+  border-right: none;
+}
+
+.filter-bar-item:hover {
+  background: var(--bg-muted);
   color: var(--text-primary);
 }
 
-.filter-chip--active {
+.filter-bar-item--active {
   background: var(--indigo-50);
-  border-color: var(--indigo-500);
   color: var(--indigo-600);
+  font-weight: 600;
 }
 
-.filter-chip-count {
+.filter-bar-item--active:hover {
+  background: var(--indigo-100);
+}
+
+/* Status indicator dot inside filter items */
+.filter-bar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.filter-bar-dot--draft     { background: var(--status-draft-text); }
+.filter-bar-dot--review    { background: var(--status-pending-text); }
+.filter-bar-dot--approved  { background: var(--status-approved-text); }
+.filter-bar-dot--launched  { background: var(--status-purple-text); }
+.filter-bar-dot--exception { background: var(--status-warning-text); }
+.filter-bar-dot--cancelled { background: var(--status-blocked-text); }
+
+/* Count badge */
+.filter-bar-count {
   font-size: 11px;
   font-weight: 600;
-  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
+  padding: 0 5px;
   border-radius: var(--radius-pill);
   background: var(--bg-muted);
   color: var(--text-tertiary);
-  line-height: 16px;
+  line-height: 18px;
 }
 
-.filter-chip--active .filter-chip-count {
+.filter-bar-item--active .filter-bar-count {
   background: var(--indigo-100);
-  color: var(--indigo-600);
+  color: var(--indigo-700);
 }
+
