@@ -151,6 +151,23 @@ export async function getLaunches(orgId: string): Promise<Launch[]> {
   return (data ?? []) as Launch[];
 }
 
+export async function getDraftLaunches(orgId: string, userId: string): Promise<Launch[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('launches')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('created_by', userId)
+    .eq('status', 'DRAFT')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('getDraftLaunches error:', error);
+    return [];
+  }
+  return (data ?? []) as Launch[];
+}
+
 export async function getLaunchById(id: string): Promise<Launch | null> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -467,4 +484,64 @@ export async function getReviewDefinitions(orgId: string): Promise<ReviewDefinit
     return [];
   }
   return (data ?? []) as ReviewDefinition[];
+}
+
+// ── Subscriptions ───────────────────────────────────────────────────────────
+
+export async function getSubscribedLaunches(orgId: string, userId: string): Promise<Launch[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('launch_subscriptions')
+    .select('launch_id, launches(*)')
+    .eq('org_id', orgId)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('getSubscribedLaunches error:', error);
+    return [];
+  }
+
+  // Extract the nested launch objects
+  return (data ?? [])
+    .map((row: Record<string, unknown>) => row.launches as Launch | null)
+    .filter((l: Launch | null): l is Launch => l !== null);
+}
+
+export async function isSubscribed(launchId: string, userId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('launch_subscriptions')
+    .select('id')
+    .eq('launch_id', launchId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  return !!data;
+}
+
+export async function subscribeTo(launchId: string, userId: string, orgId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('launch_subscriptions')
+    .upsert({ launch_id: launchId, user_id: userId, org_id: orgId }, { onConflict: 'launch_id,user_id' });
+
+  if (error) {
+    console.error('subscribeTo error:', error);
+    throw new Error('Failed to subscribe');
+  }
+}
+
+export async function unsubscribeFrom(launchId: string, userId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('launch_subscriptions')
+    .delete()
+    .eq('launch_id', launchId)
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('unsubscribeFrom error:', error);
+    throw new Error('Failed to unsubscribe');
+  }
 }

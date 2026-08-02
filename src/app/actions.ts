@@ -15,6 +15,7 @@ import {
   getCurrentUser, createLaunch, updateLaunch, addEvent, addReview,
   getReviewDefinitions, updateReview, updateReviewDefinition,
   getLaunchById, getReviewsForLaunch,
+  isSubscribed, subscribeTo, unsubscribeFrom,
 } from '@/server/db';
 import { calculateRiskLevel } from '@/lib/risk-calculator';
 import { evaluateRequiredReviews, DEFAULT_RULES } from '@/lib/rules-engine';
@@ -399,4 +400,70 @@ export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect('/login');
+}
+
+// ── Subscriptions ───────────────────────────────────────────────────────────
+
+export async function toggleSubscriptionAction(launchId: string): Promise<{ subscribed: boolean }> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const currentlySubscribed = await isSubscribed(launchId, user.id);
+
+  if (currentlySubscribed) {
+    await unsubscribeFrom(launchId, user.id);
+  } else {
+    await subscribeTo(launchId, user.id, user.org_id);
+  }
+
+  revalidatePath(`/launches/${launchId}`);
+  revalidatePath('/subscribed');
+
+  return { subscribed: !currentlySubscribed };
+}
+
+// ── Launch Lifecycle Actions ────────────────────────────────────────────────
+
+export async function markLaunchedAction(launchId: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const launch = await getLaunchById(launchId);
+  if (!launch) throw new Error('Launch not found');
+
+  // Validate transition: only APPROVED → LAUNCHED
+  assertValidTransition(launch.status, 'LAUNCHED');
+
+  const updated = await updateLaunch(launchId, { status: 'LAUNCHED' });
+
+  await addEvent(launchId, updated?.version ?? launch.version, 'LAUNCH_LAUNCHED', user.id);
+
+  revalidatePath(`/launches/${launchId}`);
+  revalidatePath('/');
+  revalidatePath('/owned');
+}
+
+export async function launchWithExceptionAction(launchId: string, justification: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  if (!justification.trim()) {
+    throw new Error('Justification is required for launching with exception');
+  }
+
+  const launch = await getLaunchById(launchId);
+  if (!launch) throw new Error('Launch not found');
+
+  // Validate transition: only IN_REVIEW → LAUNCHED_WITH_EXCEPTION
+  assertValidTransition(launch.status, 'LAUNCHED_WITH_EXCEPTION');
+
+  const updated = await updateLaunch(launchId, { status: 'LAUNCHED_WITH_EXCEPTION' });
+
+  await addEvent(launchId, updated?.version ?? launch.version, 'LAUNCHED_WITH_EXCEPTION', user.id, {
+    notes: justification,
+  });
+
+  revalidatePath(`/launches/${launchId}`);
+  revalidatePath('/');
+  revalidatePath('/owned');
 }

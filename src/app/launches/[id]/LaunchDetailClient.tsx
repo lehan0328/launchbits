@@ -13,7 +13,10 @@ import {
   AUTH_LABELS, SHARING_LABELS, mapLabels,
 } from '@/lib/labels';
 import { canReview, canDowngradeToFyi } from '@/lib/permissions';
-import { approveReviewAction, requestChangesAction, markFyiAction, claimReviewAction } from '@/app/actions';
+import {
+  approveReviewAction, requestChangesAction, markFyiAction, claimReviewAction,
+  toggleSubscriptionAction, markLaunchedAction, launchWithExceptionAction,
+} from '@/app/actions';
 
 // ============================================================================
 // Review status → CSS class mapping
@@ -55,12 +58,17 @@ interface LaunchDetailClientProps {
   reviews: LaunchReview[];
   events: LaunchEvent[];
   user: User;
+  initialSubscribed: boolean;
 }
 
-export default function LaunchDetailClient({ launch, reviews, events, user }: LaunchDetailClientProps) {
+export default function LaunchDetailClient({ launch, reviews, events, user, initialSubscribed }: LaunchDetailClientProps) {
 
   const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
   const [fyiExpanded, setFyiExpanded] = useState(false);
+  const [subscribed, setSubscribed] = useState(initialSubscribed);
+  const [showExceptionModal, setShowExceptionModal] = useState(false);
+  const [exceptionJustification, setExceptionJustification] = useState('');
+  const [isPending, startTransition] = useTransition();
 
   if (!launch) {
     return (
@@ -129,14 +137,40 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
           {(launch.status === 'DRAFT' || launch.status === 'IN_REVIEW') && (
             <Link href={`/launches/${launch.id}/edit`} className="btn btn-secondary btn-sm">Edit</Link>
           )}
-          <button className="btn btn-secondary btn-sm">Subscribe</button>
+          <button
+            className={`btn btn-sm ${subscribed ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={isPending}
+            onClick={() => {
+              startTransition(async () => {
+                const result = await toggleSubscriptionAction(launch.id);
+                setSubscribed(result.subscribed);
+              });
+            }}
+          >
+            {subscribed ? 'Subscribed ✓' : 'Subscribe'}
+          </button>
           {launch.status === 'APPROVED' && (
-            <button className="btn btn-primary btn-sm">Mark Launched</button>
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={isPending}
+              onClick={() => {
+                startTransition(async () => {
+                  await markLaunchedAction(launch.id);
+                });
+              }}
+            >
+              Mark Launched
+            </button>
           )}
           {launch.status === 'IN_REVIEW' && blockingReviews.length > 0 && (
-            <button className="btn btn-warning btn-sm">Launch with Exception</button>
+            <button
+              className="btn btn-warning btn-sm"
+              onClick={() => setShowExceptionModal(true)}
+            >
+              Launch with Exception
+            </button>
           )}
-          <button className="btn btn-secondary btn-sm">Stage Actions ▾</button>
+          <button className="btn btn-secondary btn-sm" disabled>Stage Actions ▾</button>
         </div>
       </div>
 
@@ -325,6 +359,49 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Exception justification modal */}
+      {showExceptionModal && (
+        <div className="modal-overlay" onClick={() => setShowExceptionModal(false)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <h3 className="modal-title">Launch with Exception</h3>
+            <p className="text-secondary text-sm mb-4">
+              This launch has unresolved blocking reviews. Provide a justification to proceed.
+            </p>
+            <textarea
+              className="ar-textarea w-full"
+              rows={4}
+              placeholder="Why is this launch being approved despite outstanding reviews?"
+              value={exceptionJustification}
+              onChange={e => setExceptionJustification(e.target.value)}
+            />
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowExceptionModal(false);
+                  setExceptionJustification('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-warning"
+                disabled={!exceptionJustification.trim() || isPending}
+                onClick={() => {
+                  startTransition(async () => {
+                    await launchWithExceptionAction(launch.id, exceptionJustification);
+                    setShowExceptionModal(false);
+                    setExceptionJustification('');
+                  });
+                }}
+              >
+                {isPending ? 'Launching...' : 'Confirm Exception Launch'}
+              </button>
+            </div>
           </div>
         </div>
       )}

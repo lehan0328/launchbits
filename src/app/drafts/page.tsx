@@ -1,14 +1,12 @@
-import { getCurrentUser } from '@/server/db';
+import { getCurrentUser, getDraftLaunches } from '@/server/db';
 import { redirect } from 'next/navigation';
+import DraftsClient from './DraftsClient';
 
 export default async function DraftsPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  return (
-    <div className="app-content">
-      <h1 className="page-title">Drafts</h1>
-      <p className="text-secondary">Draft launches will appear here.</p>
-    </div>
-  );
+  const drafts = await getDraftLaunches(user.org_id, user.id);
+
+  return <DraftsClient drafts={drafts} />;
 }

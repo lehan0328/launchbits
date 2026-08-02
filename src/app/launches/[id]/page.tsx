@@ -1,4 +1,4 @@
-import { getCurrentUser, getLaunchById, getReviewsForLaunch, getEventsForLaunch } from '@/server/db';
+import { getCurrentUser, getLaunchById, getReviewsForLaunch, getEventsForLaunch, isSubscribed } from '@/server/db';
 import { redirect } from 'next/navigation';
 import LaunchDetailClient from './LaunchDetailClient';
 
@@ -9,12 +9,13 @@ export default async function LaunchDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const launch = await getLaunchById(id);
 
-  const [reviews, events] = launch
+  const [reviews, events, subscribed] = launch
     ? await Promise.all([
         getReviewsForLaunch(launch.id),
         getEventsForLaunch(launch.id),
+        isSubscribed(launch.id, user.id),
       ])
-    : [[], []];
+    : [[], [], false];
 
-  return <LaunchDetailClient launch={launch} reviews={reviews} events={events} user={user} />;
+  return <LaunchDetailClient launch={launch} reviews={reviews} events={events} user={user} initialSubscribed={subscribed} />;
 }

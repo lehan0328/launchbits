@@ -1,14 +1,12 @@
-import { getCurrentUser } from '@/server/db';
+import { getCurrentUser, getSubscribedLaunches } from '@/server/db';
 import { redirect } from 'next/navigation';
+import SubscribedClient from './SubscribedClient';
 
 export default async function SubscribedPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  return (
-    <div className="app-content">
-      <h1 className="page-title">Subscribed</h1>
-      <p className="text-secondary">Launches you&apos;re subscribed to will appear here.</p>
-    </div>
-  );
+  const launches = await getSubscribedLaunches(user.org_id, user.id);
+
+  return <SubscribedClient launches={launches} />;
 }
