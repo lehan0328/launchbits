@@ -71,6 +71,15 @@ export async function getCurrentUser(): Promise<User | null> {
 
   const avatarUrl = authUser.user_metadata?.avatar_url || null;
 
+  // First user in the org gets admin role; subsequent users get member
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: existingUserCount } = await (admin as any)
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_id', defaultOrg.id);
+
+  const assignedRole = (existingUserCount === 0 || existingUserCount === null) ? 'admin' : 'member';
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: newUserData, error } = await (admin as any)
     .from('users')
@@ -79,7 +88,7 @@ export async function getCurrentUser(): Promise<User | null> {
       email: authUser.email,
       display_name: displayName,
       avatar_url: avatarUrl,
-      role: 'member',
+      role: assignedRole,
     })
     .select('*')
     .single();
@@ -254,15 +263,6 @@ export async function getPendingReviewsForUser(
   userId: string
 ): Promise<ReviewWithLaunch[]> {
   const supabase = await createClient();
-
-  // Get the user to check role
-  const { data: user } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single();
-
-  if (!user || user.role === 'member') return [];
 
   const { data, error } = await supabase
     .from('launch_reviews')

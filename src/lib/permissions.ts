@@ -100,9 +100,6 @@ export function canReview(
   review: LaunchReview,
   launchOwnerIds: string[],
 ): boolean {
-  // Must be at least a reviewer
-  if (!hasRole(user, 'reviewer')) return false;
-
   // Ariane: owner_approval_disallowed check (design doc line 995)
   if (review.owner_approval_disallowed && launchOwnerIds.includes(user.id)) {
     return false;

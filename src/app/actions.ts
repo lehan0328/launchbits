@@ -105,6 +105,11 @@ export async function submitForReviewAction(launchId: string, formData: LaunchFo
   const user = await getCurrentUser();
   if (!user) throw new Error('Not authenticated');
 
+  // Validate the launch exists and the transition is valid
+  const currentLaunch = await getLaunchById(launchId);
+  if (!currentLaunch) throw new Error('Launch not found');
+  assertValidTransition(currentLaunch.status, 'IN_REVIEW');
+
   const riskLevel = calculateRiskLevel(formData);
 
   // Update the launch with form data + transition to IN_REVIEW
