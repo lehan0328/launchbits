@@ -1290,6 +1290,12 @@ a:hover { color: var(--link-color-hover); }
   border-color: var(--status-blocked-border);
 }
 
+.tag-fyi {
+  background: var(--status-fyi-bg);
+  color: var(--status-fyi-text);
+  border-color: var(--status-fyi-border);
+}
+
 /* Risk tags (text only, no background) */
 
 /* Status dots (small circular indicators) */

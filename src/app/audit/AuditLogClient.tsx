@@ -4,29 +4,29 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { LaunchEvent } from '@/lib/types';
 
-/** Event type → human label + color token */
-const EVENT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  LAUNCH_CREATED: { label: 'Created', color: 'draft' },
-  SUBMITTED_FOR_REVIEW: { label: 'Submitted for Review', color: 'pending' },
-  REVIEW_APPROVED: { label: 'Review Approved', color: 'approved' },
-  REVIEW_NEEDS_WORK: { label: 'Needs Work', color: 'warning' },
-  REVIEW_DENIED: { label: 'Review Denied', color: 'blocked' },
-  REVIEW_FYI: { label: 'Downgraded to FYI', color: 'fyi' },
-  REVIEW_REASSIGNED: { label: 'Review Reassigned', color: 'fyi' },
-  LAUNCH_APPROVED: { label: 'Launch Approved', color: 'approved' },
-  LAUNCH_LAUNCHED: { label: 'Launched', color: 'purple' },
-  LAUNCHED_WITH_EXCEPTION: { label: 'Launched with Exception', color: 'warning' },
-  LAUNCH_CANCELLED: { label: 'Cancelled', color: 'blocked' },
-  LAUNCH_EDITED: { label: 'Edited', color: 'draft' },
-  LAUNCH_UPDATED: { label: 'Updated', color: 'draft' },
-  EMERGENCY_BYPASS: { label: 'Emergency Bypass', color: 'blocked' },
-  SLO_BREACHED: { label: 'SLO Breached', color: 'blocked' },
+/** Event type → human label + tag CSS class */
+const EVENT_TYPE_CONFIG: Record<string, { label: string; tagClass: string }> = {
+  LAUNCH_CREATED: { label: 'Created', tagClass: 'tag-draft' },
+  SUBMITTED_FOR_REVIEW: { label: 'Submitted for Review', tagClass: 'tag-in-review' },
+  REVIEW_APPROVED: { label: 'Review Approved', tagClass: 'tag-approved' },
+  REVIEW_NEEDS_WORK: { label: 'Needs Work', tagClass: 'tag-exception' },
+  REVIEW_DENIED: { label: 'Review Denied', tagClass: 'tag-cancelled' },
+  REVIEW_FYI: { label: 'Downgraded to FYI', tagClass: 'tag-fyi' },
+  REVIEW_REASSIGNED: { label: 'Review Reassigned', tagClass: 'tag-fyi' },
+  LAUNCH_APPROVED: { label: 'Launch Approved', tagClass: 'tag-approved' },
+  LAUNCH_LAUNCHED: { label: 'Launched', tagClass: 'tag-launched' },
+  LAUNCHED_WITH_EXCEPTION: { label: 'Launched with Exception', tagClass: 'tag-exception' },
+  LAUNCH_CANCELLED: { label: 'Cancelled', tagClass: 'tag-cancelled' },
+  LAUNCH_EDITED: { label: 'Edited', tagClass: 'tag-draft' },
+  LAUNCH_UPDATED: { label: 'Updated', tagClass: 'tag-draft' },
+  EMERGENCY_BYPASS: { label: 'Emergency Bypass', tagClass: 'tag-cancelled' },
+  SLO_BREACHED: { label: 'SLO Breached', tagClass: 'tag-cancelled' },
 };
 
 const PAGE_SIZE = 20;
 
 function getEventConfig(type: string) {
-  return EVENT_TYPE_CONFIG[type] || { label: type, color: 'fyi' };
+  return EVENT_TYPE_CONFIG[type] || { label: type, tagClass: 'tag-fyi' };
 }
 
 function formatDateTime(iso: string): string {
@@ -109,14 +109,7 @@ export default function AuditLogClient({ events, launchNames }: AuditLogClientPr
                   {formatDateTime(event.performed_at)}
                 </td>
                 <td>
-                  <span
-                    className="status-tag"
-                    style={{
-                      background: `var(--status-${config.color}-bg)`,
-                      color: `var(--status-${config.color}-text)`,
-                      border: `1px solid var(--status-${config.color}-border)`,
-                    }}
-                  >
+                  <span className={`tag ${config.tagClass}`}>
                     {config.label}
                   </span>
                 </td>
