@@ -70,7 +70,6 @@ Launchbits follows a **Google corp-tool aesthetic** inspired by Ariane/Launch:
 |---|---|---|
 | Page title (`.page-title`) | 22px | 400 |
 | Section header (`.section-divider-title`) | 17px | 700 |
-| Page subtitle (`.page-subtitle`) | 18px | 500 |
 | Card title (`.card-title`) | 14px | 500 |
 | Body text | 14px | 400 |
 | Table header (`.data-table th`) | 12px | 600, uppercase |
@@ -141,7 +140,7 @@ Utility classes: `mt-2` (8px), `mt-3` (12px), `mt-4` (16px), `mt-8` (32px), `mb-
 **Rules:**
 - White background, `1px solid #dadce0` border, `10px` radius.
 - Default padding: `16px 24px`.
-- Hover: border lightens to `#bdc1c6`. Clickable cards get indigo border on hover.
+- Hover: border lightens to `#bdc1c6`.
 - Never use heavy box-shadows on cards — this is a flat, corp-tool aesthetic.
 
 ### Status Tags (Badges)
@@ -164,7 +163,6 @@ Utility classes: `mt-2` (8px), `mt-3` (12px), `mt-4` (16px), `mt-8` (32px), `mb-
 
 ```html
 <span class="status-dot dot-gray"></span>
-<span class="status-dot dot-blue"></span>
 <span class="status-dot dot-green"></span>
 <span class="status-dot dot-orange"></span>
 <span class="status-dot dot-red"></span>
@@ -205,10 +203,10 @@ Default: 8px circle. Large: add `.status-dot--lg` (10px).
 ### Forms
 
 ```html
-<div class="form-group">
-  <label class="form-label">Field Name <span class="form-required">*</span></label>
+<div class="ar-field">
+  <label class="ar-label">Field Name <span class="form-required">*</span></label>
   <div class="form-hint">Helper text</div>
-  <input type="text" class="form-input" placeholder="..." />
+  <input type="text" class="ar-input" placeholder="..." />
 </div>
 
 <!-- Choice groups (checkbox/radio) -->
@@ -224,10 +222,27 @@ Default: 8px circle. Large: add `.status-dot--lg` (10px).
 ```
 
 **Rules:**
-- Labels: 13px, weight 500.
-- Inputs: `#f1f3f4` background, `#dadce0` border, focus ring is `var(--color-primary)`.
+- Labels: 13px, weight 500. Use `ar-label` (not `form-label`).
+- Inputs: Use `ar-input` or `ar-textarea`. Underline-style, focus ring is `var(--color-primary)`.
 - Required asterisk: `var(--color-red)`.
 - Choice items: bordered boxes with hover/selected states using indigo accent.
+
+### Phase 7 Extracted Utility Classes
+
+These utility classes replace common inline styles:
+
+| Class | Usage |
+|---|---|
+| `page-header-bar` | Flex container for page title + action button |
+| `audit-filter-bar` | Audit log filter controls row |
+| `audit-*-cell` | Audit log table cell styles (timestamp, link, actor, details, empty) |
+| `pagination` / `pagination-info` | Centered pagination controls |
+| `back-link` | No-decoration 20px link (detail page back arrow) |
+| `detail-empty-state` | Large padding-top empty state |
+| `detail-exception-banner` | Column-direction warning banner for exception justification |
+| `activity-tab-padding` | Activity tab inner padding |
+| `w-full` | `width: 100%` |
+| `font-semibold` / `font-normal` | Font weight utilities |
 
 ### Section Headers (Table Dividers)
 

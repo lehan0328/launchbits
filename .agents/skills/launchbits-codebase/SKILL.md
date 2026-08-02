@@ -61,7 +61,7 @@ User → /login → Google OAuth or Magic Link
 | File | Context | Usage |
 |------|---------|-------|
 | [server/supabase.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/supabase.ts) | Server Components, Server Actions, Route Handlers | Cookie-based session via `cookies()`. Subject to RLS. |
-| [lib/supabase-client.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase-client.ts) | Client Components (rare) | Browser-side, used only for ReviewsCell |
+| [lib/supabase-client.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase-client.ts) | Client Components (rare) | Browser-side. Currently unused after ReviewsCell removal — kept for future client-side features. |
 | [server/admin.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/admin.ts) | Server-only admin operations | Uses `SUPABASE_SERVICE_ROLE_KEY`, **bypasses RLS**. Only for user auto-provisioning. |
 
 ### Data Access Layer — [server/db.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/db.ts)
@@ -110,7 +110,7 @@ All writes go through Server Actions. Each action: authenticates → validates �
 6. Call `redirect(...)` to navigate after completion
 
 ### Deprecated
-- [store.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/store.ts) — **DO NOT USE**. In-memory store kept for reference only. All imports have been removed.
+- ~~store.ts~~ — Deleted. All data access goes through `server/db.ts`.
 
 ---
 
@@ -154,7 +154,7 @@ src/
 │   │   └── AuditLogClient.tsx   # Client (filtering, pagination)
 │   ├── settings/
 │   │   ├── page.tsx             # Server wrapper
-│   │   └── SettingsClient.tsx   # Client (tabs)
+│   │   └── SettingsClient.tsx   # Client (single-page, multi-section Ariane layout)
 │   ├── login/                   # Standalone auth pages
 │   │   ├── page.tsx
 │   │   └── layout.tsx
@@ -227,7 +227,7 @@ export default async function MyPage() {
 ### Adding a New Table View
 1. Define columns in [columns.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/components/columns.tsx) using `ColumnDef<T>`
 2. Use `DataTable` + `TableToolbar` from `DataTable.tsx`
-3. Reuse `ReviewsCell` for review progress bars
+3. Column renderers are self-contained — no client-side data fetching in column cells
 
 ---
 
@@ -245,7 +245,7 @@ These modules contain zero I/O — pure functions for computation and configurat
 | [state-machine.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/state-machine.ts) | Launch status FSM transitions | **Not yet wired to server actions** |
 | [utils.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/utils.ts) | Formatting, label helpers, status mappers | `statusLabel()`, `formatDate()`, `relativeTime()` |
 | [labels.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/labels.ts) | Display label maps | `DATA_LABELS`, `PURPOSE_LABELS`, `mapLabels()` |
-| [columns.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/components/columns.tsx) | DataTable column definitions (`'use client'`) | `getOwnedColumns()`, `getReviewColumns()`, `ReviewsCell` |
+| [columns.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/components/columns.tsx) | DataTable column definitions (`'use client'`) | `getOwnedColumns()`, `getPendingColumns()`, `getReviewColumns()` |
 
 ### Adding a New Type
 1. Add to `types.ts` — use union types for enums (e.g., `type Foo = 'A' | 'B'`)
@@ -263,7 +263,7 @@ These modules contain zero I/O — pure functions for computation and configurat
 ## 6 · Styling Layer (Vanilla CSS)
 
 ### Single File
-All styles live in [globals.css](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/globals.css) (~2,700 lines), organized by section comments.
+All styles live in [globals.css](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/globals.css) (~2,900 lines), organized by section comments.
 
 ### Design Tokens (`:root`)
 ```css
