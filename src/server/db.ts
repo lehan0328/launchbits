@@ -83,17 +83,28 @@ export async function getCurrentUser(): Promise<User | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: newUserData, error } = await (admin as any)
     .from('users')
-    .insert({
+    .upsert({
       org_id: defaultOrg.id,
       email: authUser.email,
       display_name: displayName,
       avatar_url: avatarUrl,
       role: assignedRole,
-    })
+    }, { onConflict: 'org_id,email', ignoreDuplicates: true })
     .select('*')
     .single();
 
   if (error) {
+    // Race condition: another request already inserted this user.
+    // Fetch the existing row instead of failing.
+    if (error.code === '23505' || error.code === 'PGRST116') {
+      const { data: raceUser } = await admin
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .eq('org_id', defaultOrg.id)
+        .single();
+      return (raceUser as unknown as User) ?? null;
+    }
     console.error('[auth] Failed to auto-provision user:', error);
     return null;
   }
