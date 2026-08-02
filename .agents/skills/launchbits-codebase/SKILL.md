@@ -15,7 +15,7 @@ description: >
 ### Schema
 - **Migrations**: `supabase/migrations/` — versioned SQL files managed by Supabase CLI
 - **RLS policies**: included in migrations; `public.user_org_id()` SECURITY DEFINER helper
-- **Key tables**: `organizations`, `users`, `launches`, `launch_owners`, `launch_reviews`, `launch_events`, `review_definitions`
+- **Key tables**: `organizations`, `users`, `launches`, `launch_owners`, `launch_reviews`, `launch_events`, `review_definitions`, `launch_subscriptions`
 - **Enums**: `launch_status` (DRAFT → IN_REVIEW → APPROVED → LAUNCHED → ...), `review_status` (PENDING_REVIEW, APPROVED, FYI, ...)
 
 ### Environment
@@ -82,6 +82,10 @@ All reads go through `db.ts`. Functions are async, server-side only:
 | `updateLaunch(id, updates)` | `Launch \| null` | Update/Submit actions |
 | `addReview(review)` | `LaunchReview \| null` | Submit action |
 | `addEvent(...)` | `void` | All mutation actions (audit trail) |
+| `getSubscribedLaunches(orgId, userId)` | `Launch[]` | Subscribed page |
+| `subscribeTo(userId, launchId)` | `void` | Subscribe action |
+| `unsubscribeFrom(userId, launchId)` | `void` | Unsubscribe action |
+| `isSubscribed(userId, launchId)` | `boolean` | Detail page subscribe toggle |
 
 ### Server Actions — [actions.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/actions.ts)
 All writes go through Server Actions. Each action: authenticates → validates → mutates → logs audit event → revalidates cache → redirects.
@@ -93,6 +97,7 @@ All writes go through Server Actions. Each action: authenticates → validates �
 | `submitForReviewAction(launchId, formData)` | Create form "Request Review" |
 | `approveReviewAction(reviewId, notes)` | Approve button on review bit. Checks `canReview()` with `reviewer_emails`. |
 | `denyReviewAction(reviewId, notes)` | Request Changes button on review bit. Requires notes. |
+| `toggleSubscriptionAction(launchId)` | Subscribe/unsubscribe toggle on detail page |
 | `signOutAction()` | TopBar avatar click |
 
 ### Adding a New Query
@@ -147,8 +152,9 @@ src/
 │   ├── reviews/
 │   │   ├── page.tsx             # Server wrapper
 │   │   └── ReviewsClient.tsx    # Client rendering
-│   ├── drafts/page.tsx          # Placeholder (sidebar link)
-│   ├── subscribed/page.tsx      # Placeholder (sidebar link)
+│   ├── subscribed/
+│   │   ├── page.tsx             # Server wrapper
+│   │   └── SubscribedClient.tsx # Client rendering
 │   ├── audit/
 │   │   ├── page.tsx             # Server wrapper
 │   │   └── AuditLogClient.tsx   # Client (filtering, pagination)
@@ -198,10 +204,12 @@ src/
 > | Component | Usage |
 > |-----------|-------|
 > | `DataTable` | Any tabular data. Pair with column defs from `columns.tsx` |
-> | `TableToolbar` | Sort toggles / filters above a DataTable |
+> | `TableToolbar` | Sort dropdown + direction toggle + optional `filters` prop (left) + `actions` slot (right, defaults to Export). Uses `sortOptions` / `sortValue` / `onSortChange` for a real `<select>`. |
 > | `SectionHeader` | Titled sections with count badge |
 > | `LaunchForm` | Create + edit forms. Receives `reviewDefinitions` prop |
 > | `Sidebar` / `TopBar` | Global chrome. Receive `User` prop from layout |
+>
+> **Sidebar «Past launches»**: Collapsible section expands to show sub-links (Launched, Exception, Cancelled). Each links to `/owned?status=STATUS`. OwnedClient reads `?status=` via `useSearchParams()` + `useEffect` to sync filter state on client-side navigation.
 
 ### Adding a New Page
 1. Create `src/app/<route>/page.tsx` as an **async Server Component**
@@ -264,6 +272,14 @@ These modules contain zero I/O — pure functions for computation and configurat
 
 ### Single File
 All styles live in [globals.css](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/globals.css) (~2,900 lines), organized by section comments.
+
+### Dead Code Audits
+Dead CSS is periodically audited and removed. Canonical locations:
+- **Utility classes** (`text-sm`, `text-muted`, `flex`, etc.): single block around line ~1875
+- **Toolbar styles** (`table-toolbar`, `sort-dropdown`, etc.): single block around line ~1595
+- **Button base** (`.btn`, `.btn-primary`, etc.): single block around line ~1170
+
+> **CRITICAL**: When adding new CSS classes, check for existing definitions first to avoid duplicates. Use `grep -n '.class-name' src/app/globals.css` before creating.
 
 ### Design Tokens (`:root`)
 ```css

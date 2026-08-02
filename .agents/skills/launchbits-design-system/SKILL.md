@@ -200,6 +200,29 @@ Default: 8px circle. Large: add `.status-dot--lg` (10px).
 - ID column: indigo color, linked to detail page.
 - Checkbox accent: `var(--color-primary)`.
 
+### Table Toolbar
+
+```tsx
+<TableToolbar
+  sortOptions={[
+    { value: 'target_date', label: 'Launch Date' },
+    { value: 'status', label: 'Status' },
+  ]}
+  sortValue={sortField}
+  onSortChange={setSortField}
+  sortAsc={sortAsc}
+  onToggleSort={() => setSortAsc(prev => !prev)}
+  filters={<select className="toolbar-filter-select">...</select>}
+/>
+```
+
+**Rules:**
+- Sort dropdown (`sort-dropdown-select`): borderless, indigo text, custom ▾ SVG chevron.
+- Direction toggle: ↑/↓ button, 28px circle, hover `#f1f3f4`.
+- `filters` prop renders between sort controls and a `toolbar-divider` (1px vertical line).
+- Right side defaults to "↓ Export to sheets" button. Override via `actions` prop.
+- **All list pages MUST use TableToolbar** for consistency.
+
 ### Forms
 
 ```html
