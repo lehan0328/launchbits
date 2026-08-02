@@ -57,6 +57,9 @@ export async function middleware(request: NextRequest) {
   // We do NOT redirect here to avoid infinite loops when auth user exists
   // but no matching row in the users table (user not provisioned).
 
+  // Pass pathname to root layout via header (so it can skip shell for /login)
+  supabaseResponse.headers.set('x-pathname', request.nextUrl.pathname);
+
   return supabaseResponse;
 }
 

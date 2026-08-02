@@ -23,7 +23,7 @@ export default function Sidebar({ user }: SidebarProps) {
   return (
     <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''}`}>
       {/* Create Launch — prominent button */}
-      <div style={{ padding: '12px 16px' }}>
+      <div className="sidebar-create-section">
         <Link href="/launches/new" className="create-launch-btn">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="#4F46E5"/>

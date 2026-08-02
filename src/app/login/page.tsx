@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase-client';
 
 // ============================================================================
@@ -59,11 +60,13 @@ export default function LoginPage() {
       <div className="login-card">
         {/* Logo */}
         <div className="login-logo">
-          <img
+          <Image
             src="/logo-lockup.png"
             alt="Launchbits"
+            width={160}
             height={36}
-            style={{ objectFit: 'contain' }}
+            className="login-logo-img"
+            priority
           />
         </div>
 

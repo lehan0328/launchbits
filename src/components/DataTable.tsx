@@ -204,11 +204,12 @@ interface SectionHeaderProps {
   count: number;
   viewAllHref?: string;
   style?: React.CSSProperties;
+  className?: string;
 }
 
-export function SectionHeader({ title, count, viewAllHref = '/', style }: SectionHeaderProps) {
+export function SectionHeader({ title, count, viewAllHref = '/', style, className }: SectionHeaderProps) {
   return (
-    <div className="section-divider" style={style}>
+    <div className={`section-divider ${className || ''}`} style={style}>
       <div className="section-divider-left">
         <span className="section-divider-title">{title}</span>
         <span className="section-divider-count">All {count} Launches</span>
