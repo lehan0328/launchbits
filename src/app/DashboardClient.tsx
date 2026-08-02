@@ -26,26 +26,23 @@ export default function DashboardClient({
     <div className="app-content">
       {/* Summary stat cards */}
       <div className="dashboard-stats">
-        <div className="card stat-card stat-card--active">
+        <div className="card stat-card">
+          <span className="stat-card-label">Active Launches</span>
           <span className="stat-card-value">{stats.activeLaunches}</span>
-          <div className="stat-card-info">
-            <span className="stat-card-label">Active Launches</span>
-            <span className="stat-card-detail">In review or approved</span>
-          </div>
+          <div className="stat-card-divider" />
+          <span className="stat-card-detail">In review or approved</span>
         </div>
-        <div className="card stat-card stat-card--pending">
+        <div className="card stat-card">
+          <span className="stat-card-label">Pending Reviews</span>
           <span className="stat-card-value">{stats.pendingReviews}</span>
-          <div className="stat-card-info">
-            <span className="stat-card-label">Pending Reviews</span>
-            <span className="stat-card-detail">Awaiting your approval</span>
-          </div>
+          <div className="stat-card-divider" />
+          <span className="stat-card-detail">Awaiting your approval</span>
         </div>
-        <div className="card stat-card stat-card--approved">
+        <div className="card stat-card">
+          <span className="stat-card-label">Recently Approved</span>
           <span className="stat-card-value">{stats.recentlyApproved}</span>
-          <div className="stat-card-info">
-            <span className="stat-card-label">Recently Approved</span>
-            <span className="stat-card-detail">Last 7 days</span>
-          </div>
+          <div className="stat-card-divider" />
+          <span className="stat-card-detail">Last 7 days</span>
         </div>
       </div>
 
