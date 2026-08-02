@@ -18,7 +18,7 @@ export default function ReviewsClient({
         emptyState={
           <div className="empty-state">
             <div className="empty-state-title">All caught up</div>
-            <p className="text-secondary text-sm" style={{ marginTop: 8 }}>
+            <p className="text-secondary text-sm mt-2">
               No reviews need your attention right now.
             </p>
           </div>

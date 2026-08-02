@@ -43,7 +43,7 @@ export function TableToolbar({
     <div className="table-toolbar">
       <div className="table-toolbar-left">
         <button className="sort-dropdown">
-          <span style={{ fontSize: 16, lineHeight: 1 }}>≡</span>
+          <span className="sort-icon">≡</span>
           {sortLabel} ▾
         </button>
         <button
@@ -145,7 +145,7 @@ export function DataTable<T extends { id: string }>({
           <tr>
             <td
               colSpan={columns.length + (selectable ? 1 : 0) + (expandable ? 1 : 0)}
-              style={{ textAlign: 'center', padding: '48px 0' }}
+              className="dt-empty-cell"
             >
               {emptyState}
             </td>

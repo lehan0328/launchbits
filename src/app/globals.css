@@ -2909,3 +2909,135 @@ a:hover { color: var(--link-color-hover); }
   background: rgba(79, 70, 229, 0.15);
   border-color: var(--color-primary);
 }
+
+/* ============================================================================
+   PHASE 7 — DESIGN SYSTEM AUDIT
+   Extracted classes replacing inline styles
+   ============================================================================ */
+
+/* ── Page header bar (title + action button) ─────────────── */
+.page-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-6);
+}
+
+/* ── Audit Log ───────────────────────────────────────────── */
+.audit-filter-bar {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+}
+
+.audit-filter-label {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.audit-filter-select {
+  width: 220px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.audit-filter-count {
+  color: var(--text-tertiary);
+}
+
+.audit-timestamp-cell {
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.audit-link-cell {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.audit-actor-cell {
+  color: var(--text-secondary);
+}
+
+.audit-details-cell {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audit-empty-cell {
+  text-align: center;
+  padding: var(--sp-8);
+  color: var(--text-tertiary);
+}
+
+/* ── Pagination ──────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.pagination-info {
+  line-height: 32px;
+  color: var(--text-secondary);
+}
+
+/* ── Launch Detail extras ────────────────────────────────── */
+.back-link {
+  text-decoration: none;
+  font-size: 20px;
+}
+
+.detail-empty-state {
+  padding-top: 120px;
+}
+
+.detail-exception-banner {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.activity-tab-padding {
+  padding: 24px 32px;
+}
+
+.activity-empty-state {
+  padding: 40px 0;
+}
+
+/* ── Utility spacers (replacing inline marginTop/Bottom) ── */
+.mb-4 { margin-bottom: var(--sp-4); }
+.mb-6 { margin-bottom: var(--sp-6); }
+.mt-2 { margin-top: var(--sp-2); }
+.w-full { width: 100%; }
+.font-semibold { font-weight: 600; }
+.font-normal { font-weight: 400; }
+
+/* ── DataTable extracted styles ──────────────────────────── */
+.sort-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.dt-empty-cell {
+  text-align: center;
+  padding: 48px 0;
+}
+
+/* ── Status tag variants ─────────────────────────────────── */
+.status-tag--warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-text);
+  border: 1px solid var(--status-warning-border);
+}
+
+
+

@@ -60,7 +60,7 @@ export default function AuditLogClient({ events, launchNames }: AuditLogClientPr
 
   return (
     <div className="app-content">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div className="page-header-bar">
         <h1 className="page-title">Audit Log</h1>
         <button className="btn" disabled title="Requires backend connection">
           Export CSV
@@ -68,12 +68,11 @@ export default function AuditLogClient({ events, launchNames }: AuditLogClientPr
       </div>
 
       {/* Filters */}
-      <div className="table-toolbar" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <label className="text-sm" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Event type:</label>
+      <div className="table-toolbar mb-4">
+        <div className="audit-filter-bar">
+          <label className="text-sm audit-filter-label">Event type:</label>
           <select
-            className="form-input"
-            style={{ width: 220, padding: '6px 10px', fontSize: 13 }}
+            className="form-input audit-filter-select"
             value={filterType}
             onChange={e => { setFilterType(e.target.value); setPage(0); }}
           >
@@ -85,13 +84,13 @@ export default function AuditLogClient({ events, launchNames }: AuditLogClientPr
             ))}
           </select>
         </div>
-        <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+        <span className="text-sm audit-filter-count">
           {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Events Table */}
-      <table className="data-table" style={{ width: '100%' }}>
+      <table className="data-table w-full">
         <thead>
           <tr>
             <th>Timestamp</th>
@@ -106,7 +105,7 @@ export default function AuditLogClient({ events, launchNames }: AuditLogClientPr
             const config = getEventConfig(event.event_type);
             return (
               <tr key={event.id}>
-                <td style={{ whiteSpace: 'nowrap', fontSize: 13, color: 'var(--text-secondary)' }}>
+                <td className="audit-timestamp-cell">
                   {formatDateTime(event.performed_at)}
                 </td>
                 <td>
@@ -124,15 +123,15 @@ export default function AuditLogClient({ events, launchNames }: AuditLogClientPr
                 <td>
                   <Link
                     href={`/launches/${event.launch_id}`}
-                    style={{ color: 'var(--link-color)', textDecoration: 'none', fontWeight: 500 }}
+                    className="audit-link-cell"
                   >
                     {launchNames[event.launch_id] || event.launch_id}
                   </Link>
                 </td>
-                <td style={{ color: 'var(--text-secondary)' }}>
+                <td className="audit-actor-cell">
                   {event.performed_by_name || '—'}
                 </td>
-                <td style={{ fontSize: 13, color: 'var(--text-tertiary)', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <td className="audit-details-cell">
                   {formatEventDetails(event)}
                 </td>
               </tr>
@@ -140,7 +139,7 @@ export default function AuditLogClient({ events, launchNames }: AuditLogClientPr
           })}
           {pagedEvents.length === 0 && (
             <tr>
-              <td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--text-tertiary)' }}>
+              <td colSpan={5} className="audit-empty-cell">
                 No events found.
               </td>
             </tr>
@@ -150,23 +149,21 @@ export default function AuditLogClient({ events, launchNames }: AuditLogClientPr
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16 }}>
+        <div className="pagination">
           <button
-            className="btn"
+            className="btn btn-sm"
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0}
-            style={{ fontSize: 13 }}
           >
             ← Previous
           </button>
-          <span className="text-sm" style={{ lineHeight: '32px', color: 'var(--text-secondary)' }}>
+          <span className="text-sm pagination-info">
             Page {page + 1} of {totalPages}
           </span>
           <button
-            className="btn"
+            className="btn btn-sm"
             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            style={{ fontSize: 13 }}
           >
             Next →
           </button>

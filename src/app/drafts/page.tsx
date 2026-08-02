@@ -7,8 +7,8 @@ export default async function DraftsPage() {
 
   return (
     <div className="app-content">
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 8 }}>Drafts</h1>
-      <p style={{ color: 'var(--ar-text-secondary)' }}>Draft launches will appear here.</p>
+      <h1 className="page-title">Drafts</h1>
+      <p className="text-secondary">Draft launches will appear here.</p>
     </div>
   );
 }

@@ -65,9 +65,9 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
   if (!launch) {
     return (
       <div className="app-content">
-        <div className="empty-state" style={{ paddingTop: 120 }}>
+        <div className="empty-state detail-empty-state">
           <div className="empty-state-title">Launch not found</div>
-          <Link href="/" className="btn btn-secondary" style={{ marginTop: 16 }}>← Back to Dashboard</Link>
+          <Link href="/" className="btn btn-secondary mt-4">← Back to Dashboard</Link>
         </div>
       </div>
     );
@@ -99,7 +99,7 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
       {/* ============================================================ */}
       <div className="launch-meta-bar">
         <div className="launch-meta-bar-left">
-          <Link href="/" className="text-secondary" style={{ textDecoration: 'none', fontSize: 20 }}>←</Link>
+          <Link href="/" className="text-secondary back-link">←</Link>
           <span className="launch-meta-id">{launch.display_id}</span>
           <span className="launch-meta-title">{launch.name}</span>
         </div>
@@ -111,7 +111,7 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
           </div>
           <div className="launch-meta-field">
             <span className="launch-meta-field-label">Status</span>
-            <span className={`tag ${statusTagClass(launch.status)}`} style={{ marginLeft: 4 }}>
+            <span className={`tag ${statusTagClass(launch.status)}`}>
               {statusLabel(launch.status)}
             </span>
           </div>
@@ -242,7 +242,7 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
             <CollapsibleSection title="All members" />
             <CollapsibleSection title="All documents" />
 
-            <button className="btn btn-secondary mt-4" style={{ width: '100%' }}>Export Audit Report</button>
+            <button className="btn btn-secondary mt-4 w-full">Export Audit Report</button>
           </div>
 
           {/* Main Content: Reviews Table */}
@@ -291,9 +291,9 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
 
             {/* Exception justification */}
             {launch.launch_justification && (
-              <div className="detail-warning-banner mt-4" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-                <span style={{ fontWeight: 600 }}>Exception Justification</span>
-                <span style={{ fontWeight: 400 }}>{launch.launch_justification}</span>
+              <div className="detail-warning-banner mt-4 detail-exception-banner">
+                <span className="font-semibold">Exception Justification</span>
+                <span className="font-normal">{launch.launch_justification}</span>
               </div>
             )}
           </div>
@@ -304,7 +304,7 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
       {/* Content: Comments & Activity Tab */}
       {/* ============================================================ */}
       {activeTab === 'activity' && (
-        <div className="detail-main activity-tab-content" style={{ padding: '24px 32px' }}>
+        <div className="detail-main activity-tab-content activity-tab-padding">
           <h2 className="reviews-section-title">Activity</h2>
           <div className="event-log">
             {events.map(event => (
@@ -318,9 +318,9 @@ export default function LaunchDetailClient({ launch, reviews, events, user }: La
               </div>
             ))}
             {events.length === 0 && (
-              <div className="empty-state" style={{ padding: '40px 0' }}>
+              <div className="empty-state activity-empty-state">
                 <div className="empty-state-title">No activity yet</div>
-                <p className="text-secondary text-sm" style={{ marginTop: 8 }}>
+                <p className="text-secondary text-sm mt-2">
                   Events will appear here as the launch progresses.
                 </p>
               </div>
@@ -534,7 +534,7 @@ function ClaimButton({ reviewId }: { reviewId: string }) {
 function ReadinessBanner({ status, blockingCount }: { status: string; blockingCount: number }) {
   const config = getBannerConfig(status, blockingCount);
   return (
-    <div className={`readiness-banner ${config.className}`} style={{ marginBottom: 16 }}>
+    <div className={`readiness-banner ${config.className} mb-4`}>
       <span className={`status-dot ${config.dotClass}`} />
       <div>
         <div className="font-medium">{config.text}</div>

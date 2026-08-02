@@ -42,8 +42,8 @@ export default function EditLaunchClient({ launch, reviewDefinitions }: EditLaun
 
   if (!launch) {
     return (
-      <div className="app-content" style={{ textAlign: 'center', padding: 80 }}>
-        <h2 style={{ color: 'var(--text-secondary)' }}>Launch not found</h2>
+      <div className="app-content detail-empty-state">
+        <h2 className="text-secondary">Launch not found</h2>
       </div>
     );
   }
@@ -59,12 +59,7 @@ export default function EditLaunchClient({ launch, reviewDefinitions }: EditLaun
       previousRiskLevel={launch.risk_level}
       headerExtra={
         !canEdit ? (
-          <span className="status-tag" style={{
-            background: 'var(--status-warning-bg)',
-            color: 'var(--status-warning-text)',
-            border: '1px solid var(--status-warning-border)',
-            marginLeft: 12,
-          }}>
+          <span className="status-tag status-tag--warning">
             Read-only (status: {launch.status})
           </span>
         ) : undefined

@@ -120,7 +120,7 @@ function ReviewTypesSection({ reviewDefs }: { reviewDefs: ReviewDefinition[] }) 
         </div>
       </div>
       <div className="ar-section-body">
-        <table className="data-table" style={{ width: '100%' }}>
+        <table className="data-table w-full">
           <thead>
             <tr>
               <th>Label</th>
@@ -153,7 +153,7 @@ function ReviewDefRow({ rd, isExpanded, onToggle }: {
 }) {
   return (
     <>
-      <tr className="settings-review-row" onClick={onToggle} style={{ cursor: 'pointer' }}>
+      <tr className="settings-review-row" onClick={onToggle}>
         <td className="font-medium">{rd.label}</td>
         <td>
           <span className="review-status-tag review-status-tag--fyi">{rd.review_type}</span>
@@ -266,8 +266,8 @@ function ReviewerEmailEditor({ reviewDefId, initialEmails }: { reviewDefId: stri
           onBlur={() => { if (inputValue.trim()) addEmail(inputValue); }}
         />
       </div>
-      {error && <div className="review-action-error" style={{ marginTop: 8 }}>{error}</div>}
-      <div className="ar-actions" style={{ marginTop: 12 }}>
+      {error && <div className="review-action-error mt-2">{error}</div>}
+      <div className="ar-actions mt-2">
         <button
           className="btn btn-primary btn-sm"
           onClick={handleSave}
@@ -300,7 +300,7 @@ function TeamSection({ users }: { users: User[] }) {
         </div>
       </div>
       <div className="ar-section-body">
-        <table className="data-table" style={{ width: '100%' }}>
+        <table className="data-table w-full">
           <thead>
             <tr>
               <th>Member</th>
@@ -327,7 +327,7 @@ function TeamSection({ users }: { users: User[] }) {
             ))}
           </tbody>
         </table>
-        <div className="ar-actions" style={{ marginTop: 16 }}>
+        <div className="ar-actions mt-4">
           <button className="btn btn-secondary btn-sm" disabled>+ Invite Member</button>
         </div>
       </div>

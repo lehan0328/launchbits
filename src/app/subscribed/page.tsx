@@ -7,8 +7,8 @@ export default async function SubscribedPage() {
 
   return (
     <div className="app-content">
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 8 }}>Subscribed</h1>
-      <p style={{ color: 'var(--ar-text-secondary)' }}>Launches you&apos;re subscribed to will appear here.</p>
+      <h1 className="page-title">Subscribed</h1>
+      <p className="text-secondary">Launches you&apos;re subscribed to will appear here.</p>
     </div>
   );
 }
