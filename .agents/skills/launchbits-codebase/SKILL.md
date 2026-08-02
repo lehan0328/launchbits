@@ -15,7 +15,7 @@ description: >
 ### Schema
 - **Migrations**: `supabase/migrations/` — versioned SQL files managed by Supabase CLI
 - **RLS policies**: included in migrations; `public.user_org_id()` SECURITY DEFINER helper
-- **Key tables**: `organizations`, `users`, `launches`, `launch_owners`, `launch_reviews`, `launch_events`, `review_definitions`, `launch_subscriptions`
+- **Key tables**: `organizations`, `users`, `launches`, `launch_owners`, `launch_reviews`, `launch_events`, `review_definitions`, `launch_subscriptions`, `slack_messages`
 - **Enums**: `launch_status` (DRAFT → IN_REVIEW → APPROVED → LAUNCHED → ...), `review_status` (PENDING_REVIEW, APPROVED, FYI, ...)
 
 ### Environment
@@ -24,6 +24,19 @@ description: >
 NEXT_PUBLIC_SUPABASE_URL=https://bfjkiwwbivyxonsosxxd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # server-only, bypasses RLS
+
+# Slack Integration
+SLACK_CLIENT_ID=your-slack-app-client-id
+SLACK_CLIENT_SECRET=your-slack-app-client-secret
+SLACK_SIGNING_SECRET=your-slack-signing-secret
+NEXT_PUBLIC_SLACK_CLIENT_ID=same-as-SLACK_CLIENT_ID
+
+# Encryption (AES-256-GCM for PII like Slack tokens)
+# Generate with: openssl rand -hex 32
+ENCRYPTION_KEY=64-char-hex-string
+
+# App URL for Slack message links
+NEXT_PUBLIC_APP_URL=https://www.launchbits.dev
 ```
 
 ---
@@ -62,7 +75,8 @@ User → /login → Google OAuth or Magic Link
 |------|---------|-------|
 | [server/supabase.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/supabase.ts) | Server Components, Server Actions, Route Handlers | Cookie-based session via `cookies()`. Subject to RLS. |
 | [lib/supabase-client.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase-client.ts) | Client Components (rare) | Browser-side. Currently unused after ReviewsCell removal — kept for future client-side features. |
-| [server/admin.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/admin.ts) | Server-only admin operations | Uses `SUPABASE_SERVICE_ROLE_KEY`, **bypasses RLS**. Only for user auto-provisioning. |
+| [server/admin.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/admin.ts) | Server-only admin operations | Uses `SUPABASE_SERVICE_ROLE_KEY`, **bypasses RLS**. Used for user auto-provisioning + Slack notification orchestration. |
+| [server/crypto.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/crypto.ts) | Server-only encryption | AES-256-GCM `encrypt()`/`decrypt()` for PII (Slack bot tokens). Key from `ENCRYPTION_KEY` env var. |
 
 ### Data Access Layer — [server/db.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/db.ts)
 All reads go through `db.ts`. Functions are async, server-side only:
@@ -95,9 +109,10 @@ All writes go through Server Actions. Each action: authenticates → validates �
 | `createLaunchAction(formData)` | Create launch form "Save Draft" |
 | `updateLaunchAction(launchId, formData)` | Edit launch form "Save Changes" |
 | `submitForReviewAction(launchId, formData)` | Create form "Request Review" |
-| `approveReviewAction(reviewId, notes)` | Approve button on review bit. Checks `canReview()` with `reviewer_emails`. |
-| `denyReviewAction(reviewId, notes)` | Request Changes button on review bit. Requires notes. |
+| `approveReviewAction(reviewId, notes)` | Approve button on review bit. Checks `canReview()` with `reviewer_emails`. Triggers Slack notification. |
+| `denyReviewAction(reviewId, notes)` | Request Changes button on review bit. Requires notes. Triggers Slack notification. |
 | `toggleSubscriptionAction(launchId)` | Subscribe/unsubscribe toggle on detail page |
+| `disconnectSlackAction()` | Settings page — removes Slack token from org. Admin-only. |
 | `signOutAction()` | TopBar avatar click |
 
 ### Adding a New Query
@@ -187,12 +202,15 @@ src/
 ├── server/                      # Server-only code
 │   ├── db.ts                    # Data access layer
 │   ├── supabase.ts              # Server Supabase client
-│   └── admin.ts                 # Admin client (bypasses RLS)
+│   ├── admin.ts                 # Admin client (bypasses RLS)
+│   ├── crypto.ts                # AES-256-GCM encrypt/decrypt for PII
+│   └── slack-notifications.ts   # Slack notification orchestration
 ├── middleware.ts
 └── lib/                         # Shared pure logic (no I/O)
     ├── types.ts
     ├── utils.ts
     ├── labels.ts
+    ├── slack.ts                 # Slack Web API client (pure fetch, no SDK)
     ├── supabase-client.ts       # Browser Supabase client
     └── ... (business logic modules)
 ```
@@ -254,6 +272,7 @@ These modules contain zero I/O — pure functions for computation and configurat
 | [utils.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/utils.ts) | Formatting, label helpers, status mappers | `statusLabel()`, `formatDate()`, `relativeTime()` |
 | [labels.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/labels.ts) | Display label maps | `DATA_LABELS`, `PURPOSE_LABELS`, `mapLabels()` |
 | [columns.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/components/columns.tsx) | DataTable column definitions (`'use client'`) | `getOwnedColumns()`, `getPendingColumns()`, `getReviewColumns()` |
+| [slack.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/slack.ts) | Slack Web API client (pure `fetch()`, no SDK) | `postMessage()`, `updateMessage()`, `lookupUserByEmail()`, `buildReviewRequestBlocks()`, `verifySlackSignature()` |
 
 ### Adding a New Type
 1. Add to `types.ts` — use union types for enums (e.g., `type Foo = 'A' | 'B'`)
@@ -337,3 +356,40 @@ var(--status-fyi-bg/text/border)
 - Use design token `var(--*)` over hardcoded hex values
 - New component styles → add section to `globals.css` with a `/* ====== SECTION NAME ====== */` comment
 - Class naming: component prefix (`ar-`, `dt-`, `login-`) for scoping, short names (`btn`, `status-tag`) for globals
+
+---
+
+## 7 · Slack Integration Layer
+
+### Architecture
+```
+User clicks "Connect" in Settings
+    → Slack OAuth flow (/api/slack/oauth)
+    → Token encrypted (AES-256-GCM) → stored on org row
+    → Notifications fire on submit/approve/deny actions
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| [lib/slack.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/slack.ts) | Pure Slack Web API wrapper (no SDK). Block Kit templates. Signature validation. |
+| [server/crypto.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/crypto.ts) | AES-256-GCM encrypt/decrypt. Key from `ENCRYPTION_KEY` env var. |
+| [server/slack-notifications.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/slack-notifications.ts) | Server orchestration: reads DB, decrypts token, sends messages, tracks them. Fire-and-forget safe. |
+| [api/slack/events/route.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/api/slack/events/route.ts) | Slack Events API handler + `url_verification` challenge |
+| [api/slack/interactivity/route.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/api/slack/interactivity/route.ts) | Button press handler (approve/deny from Slack) |
+| [api/slack/oauth/route.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/api/slack/oauth/route.ts) | OAuth callback: exchanges code → encrypts token → stores on org |
+
+### Notification Flow
+| Action | Slack Effect |
+|--------|-------------|
+| `submitForReviewAction()` | Posts to each review's `reviewer_slack_channel` with approve/deny buttons |
+| `approveReviewAction()` | DMs launch owner + updates the channel message to show "Approved" |
+| `requestChangesAction()` | DMs launch owner + updates the channel message to show "Changes Requested" |
+
+### Rules
+- **No Slack SDK** — all calls use native `fetch()` against `https://slack.com/api/`
+- **PII encryption**: Slack bot tokens are AES-256-GCM encrypted before DB storage. Never store plaintext tokens.
+- **Fire-and-forget**: All `notifyReview*()` calls use `void` prefix so they don't block the server action.
+- **Signature validation**: All incoming Slack requests are verified with `verifySlackSignature()` (HMAC-SHA256).
+- **Admin client**: Slack notification functions use `createAdminClient()` (bypasses RLS) since they run outside user context.
+- **Untyped tables**: `slack_messages` is not in Supabase generated types — use `as any` cast on `.from()` calls.
