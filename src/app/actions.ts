@@ -22,6 +22,7 @@ import { evaluateRequiredReviews, DEFAULT_RULES } from '@/lib/rules-engine';
 import { canReview, canDowngradeToFyi, canManagePolicies } from '@/lib/permissions';
 import { assertValidTransition } from '@/lib/state-machine';
 import { isBlockingReview } from '@/lib/utils';
+import { notifyReviewRequested, notifyReviewCompleted } from '@/server/slack-notifications';
 import type { LaunchFormData, ReviewStatus } from '@/lib/types';
 
 // ── Create Launch ───────────────────────────────────────────────────────────
@@ -177,6 +178,10 @@ export async function submitForReviewAction(launchId: string, formData: LaunchFo
     new_val: { reviews: reviewLabels },
   });
 
+  // Slack: notify reviewer channels (fire-and-forget)
+  const createdReviews = await getReviewsForLaunch(launchId);
+  void notifyReviewRequested(user.org_id, updated, createdReviews, user.display_name);
+
   revalidatePath('/');
   revalidatePath('/reviews');
   redirect(`/launches/${launchId}`);
@@ -226,6 +231,14 @@ export async function approveReviewAction(reviewId: string, notes: string) {
     });
   }
 
+  // Slack: notify owner + update channel message (fire-and-forget)
+  const ownerData = await getLaunchOwnerEmail(launch.id);
+  void notifyReviewCompleted(
+    launch.org_id, launch,
+    { ...review, label: review.label } as Parameters<typeof notifyReviewCompleted>[2],
+    'approved', user.display_name, ownerData || '', notes || null,
+  );
+
   revalidatePath(`/launches/${launch.id}`);
   revalidatePath('/');
   revalidatePath('/reviews');
@@ -264,6 +277,14 @@ export async function requestChangesAction(reviewId: string, notes: string) {
   await addEvent(launch.id, launch.version, 'REVIEW_CHANGES_REQUESTED', user.id, {
     new_val: { review: review.label, notes },
   });
+
+  // Slack: notify owner + update channel message (fire-and-forget)
+  const ownerEmail = await getLaunchOwnerEmail(launch.id);
+  void notifyReviewCompleted(
+    launch.org_id, launch,
+    { ...review, label: review.label } as Parameters<typeof notifyReviewCompleted>[2],
+    'denied', user.display_name, ownerEmail || '', notes,
+  );
 
   revalidatePath(`/launches/${launch.id}`);
   revalidatePath('/');
@@ -326,6 +347,22 @@ async function getLaunchForReview(reviewId: string) {
 
   if (error || !data) return null;
   return getLaunchById(data.launch_id);
+}
+
+async function getLaunchOwnerEmail(launchId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: launch } = await supabase
+    .from('launches')
+    .select('created_by')
+    .eq('id', launchId)
+    .single();
+  if (!launch) return null;
+  const { data: owner } = await supabase
+    .from('users')
+    .select('email')
+    .eq('id', launch.created_by)
+    .single();
+  return owner?.email || null;
 }
 
 // ── Update Reviewer Emails (Admin) ─────────────────────────────────────────
@@ -466,4 +503,23 @@ export async function launchWithExceptionAction(launchId: string, justification:
   revalidatePath(`/launches/${launchId}`);
   revalidatePath('/');
   revalidatePath('/owned');
+}
+
+// ── Disconnect Slack ────────────────────────────────────────────────────────
+
+export async function disconnectSlackAction() {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  if (!canManagePolicies(user)) {
+    throw new Error('Only admins can manage integrations');
+  }
+
+  const supabase = await createClient();
+  await supabase
+    .from('organizations')
+    .update({ slack_bot_token_encrypted: null, slack_team_id: null })
+    .eq('id', user.org_id);
+
+  revalidatePath('/settings');
 }

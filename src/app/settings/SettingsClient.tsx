@@ -96,7 +96,7 @@ export default function SettingsClient({ org, user, reviewDefs }: SettingsClient
         <TeamSection users={[user]} />
 
         {/* ── Section 5: Integrations ── */}
-        <IntegrationsSection />
+        <IntegrationsSection org={org} />
 
       </div>
     </>
@@ -339,13 +339,26 @@ function TeamSection({ users }: { users: User[] }) {
 // Section 5: Integrations
 // ============================================================================
 
-const INTEGRATIONS = [
-  { name: 'Slack', desc: 'Send review requests and receive approvals directly in Slack.', action: 'Connect', icon: '💬' },
+const OTHER_INTEGRATIONS = [
   { name: 'GitHub', desc: 'Block PR merges until all review bits are green via Check Runs.', action: 'Install App', icon: '🐙' },
   { name: 'Email (Resend)', desc: 'Fallback notifications for users not on Slack.', action: 'Configure', icon: '✉️' },
 ];
 
-function IntegrationsSection() {
+function IntegrationsSection({ org }: { org: Organization }) {
+  const [isPending, startTransition] = useTransition();
+  const slackConnected = !!org.slack_bot_token_encrypted;
+
+  const slackClientId = process.env.NEXT_PUBLIC_SLACK_CLIENT_ID;
+  const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const slackOauthUrl = `https://slack.com/oauth/v2/authorize?client_id=${slackClientId}&scope=chat:write,chat:write.public,users:read,users:read.email&redirect_uri=${encodeURIComponent(`${appUrl}/api/slack/oauth`)}`;
+
+  const handleDisconnect = () => {
+    startTransition(async () => {
+      const { disconnectSlackAction } = await import('@/app/actions');
+      await disconnectSlackAction();
+    });
+  };
+
   return (
     <div className="ar-section">
       <div className="ar-section-header">
@@ -356,7 +369,33 @@ function IntegrationsSection() {
         </div>
       </div>
       <div className="ar-section-body">
-        {INTEGRATIONS.map(int => (
+        {/* Slack — live */}
+        <div className="ar-integration-row">
+          <span className="ar-integration-icon">💬</span>
+          <div className="ar-integration-info">
+            <div className="ar-integration-name">
+              Slack
+              {slackConnected && <span className="tag tag-approved" style={{ marginLeft: 8 }}>Connected</span>}
+            </div>
+            <div className="ar-integration-desc">Send review requests and receive approvals directly in Slack.</div>
+          </div>
+          {slackConnected ? (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleDisconnect}
+              disabled={isPending}
+            >
+              {isPending ? 'Disconnecting…' : 'Disconnect'}
+            </button>
+          ) : (
+            <a href={slackOauthUrl} className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
+              Connect
+            </a>
+          )}
+        </div>
+
+        {/* Other integrations — not yet implemented */}
+        {OTHER_INTEGRATIONS.map(int => (
           <div key={int.name} className="ar-integration-row">
             <span className="ar-integration-icon">{int.icon}</span>
             <div className="ar-integration-info">

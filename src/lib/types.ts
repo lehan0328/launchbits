@@ -106,6 +106,8 @@ export interface Organization {
   name: string;
   slug: string;
   policy_rules: string; // YAML
+  slack_bot_token_encrypted: string | null;
+  slack_team_id: string | null;
   created_at: string;
 }
 
@@ -220,6 +222,18 @@ export interface LaunchEvent {
 /** LaunchReview with the parent Launch joined for display in tables */
 export interface ReviewWithLaunch extends LaunchReview {
   launch?: Launch;
+}
+
+/** Tracks Slack messages for updates (e.g., approval updates the review request message) */
+export interface SlackMessage {
+  id: string;
+  org_id: string;
+  launch_id: string;
+  review_id: string | null;
+  channel_id: string;
+  message_ts: string;
+  message_type: 'review_request' | 'approval' | 'denial' | 'slo_warning';
+  created_at: string;
 }
 
 /**
