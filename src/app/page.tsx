@@ -8,20 +8,32 @@ import { redirect } from 'next/navigation';
 import type { Launch } from '@/lib/types';
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
+  let user;
+  try {
+    user = await getCurrentUser();
+  } catch (e) {
+    console.error('[DashboardPage] getCurrentUser threw:', e);
+    redirect('/login');
+  }
   if (!user) redirect('/login');
 
-  const launches = await getLaunches(user.org_id);
-  const pendingReviews = await getPendingReviewsForUser(user.org_id, user.id);
+  let launches: Launch[] = [];
+  let pendingApproval: Launch[] = [];
 
-  // Deduplicate by launch — multiple reviews can point to the same launch
-  const seen = new Set<string>();
-  const pendingApproval: Launch[] = [];
-  for (const review of pendingReviews) {
-    if (review.launch && !seen.has(review.launch_id)) {
-      seen.add(review.launch_id);
-      pendingApproval.push(review.launch);
+  try {
+    launches = await getLaunches(user.org_id);
+    const pendingReviews = await getPendingReviewsForUser(user.org_id, user.id);
+
+    // Deduplicate by launch — multiple reviews can point to the same launch
+    const seen = new Set<string>();
+    for (const review of pendingReviews) {
+      if (review.launch && !seen.has(review.launch_id)) {
+        seen.add(review.launch_id);
+        pendingApproval.push(review.launch);
+      }
     }
+  } catch (e) {
+    console.error('[DashboardPage] Data fetch error:', e);
   }
 
   return (
@@ -54,3 +66,4 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
