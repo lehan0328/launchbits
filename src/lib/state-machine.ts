@@ -28,10 +28,8 @@ const VALID_TRANSITIONS: Record<LaunchStatus, Set<LaunchStatus>> = {
   CANCELLED: new Set(), // Terminal state
 };
 
-/**
- * Human-readable labels for each status.
- */
-export const STATUS_LABELS: Record<LaunchStatus, string> = {
+/** Human-readable labels for each status (internal use only) */
+const STATUS_LABELS: Record<LaunchStatus, string> = {
   DRAFT: 'Draft',
   IN_REVIEW: 'In Review',
   APPROVED: 'Approved',

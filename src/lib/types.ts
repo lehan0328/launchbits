@@ -215,40 +215,6 @@ export interface LaunchEvent {
   notes: string | null;
 }
 
-/** Full Launch Card with reviews and events (API response) */
-export interface LaunchDetail extends Launch {
-  reviews: LaunchReview[];
-  events: LaunchEvent[];
-  owners: User[];
-}
-
-// --- API Types ---
-
-export interface CreateLaunchRequest {
-  name: string;
-  description?: string;
-  target_date?: string;
-  hard_deadline?: boolean;
-  // Questionnaire
-  q_data_classes?: DataClassification[];
-  q_target_population?: TargetPopulation[];
-  q_processing_purpose?: ProcessingPurpose[];
-  q_consent_mechanism?: ConsentMechanism;
-  q_retention_ttl?: RetentionTTL;
-  q_deletion_controls?: DeletionControls;
-  q_external_sharing?: ExternalSharing[];
-  q_ai_model_scope?: AIModelScope;
-  q_automated_decisions?: boolean;
-  q_network_exposure?: NetworkExposure[];
-  q_auth_secrets?: AuthSecrets[];
-  q_input_parsing?: InputParsing[];
-  github_repo?: string;
-}
-
-export interface ReviewActionRequest {
-  notes?: string;
-}
-
 // --- Derived Types (used by UI components) ---
 
 /** LaunchReview with the parent Launch joined for display in tables */

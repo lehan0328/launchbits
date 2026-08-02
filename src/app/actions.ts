@@ -21,7 +21,7 @@ import { evaluateRequiredReviews, DEFAULT_RULES } from '@/lib/rules-engine';
 import { canReview, canDowngradeToFyi, canManagePolicies } from '@/lib/permissions';
 import { assertValidTransition } from '@/lib/state-machine';
 import { isBlockingReview } from '@/lib/utils';
-import type { LaunchFormData, RiskLevel, ReviewStatus } from '@/lib/types';
+import type { LaunchFormData, ReviewStatus } from '@/lib/types';
 
 // ── Create Launch ───────────────────────────────────────────────────────────
 

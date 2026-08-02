@@ -5,59 +5,13 @@
 // Reusable column configs for DataTable across pages.
 // ============================================================================
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ColumnDef, statusTextClass } from '@/components/DataTable';
-import { createClient } from '@/lib/supabase-client';
-import type { Launch, LaunchReview, ReviewWithLaunch } from '@/lib/types';
+import type { Launch, ReviewWithLaunch } from '@/lib/types';
 import {
   statusLabel, formatDate, relativeTime,
-  reviewStatusLabel, isBlockingReview,
+  reviewStatusLabel,
 } from '@/lib/utils';
-
-// ============================================================================
-// ReviewsCell — shared review progress indicator
-// ============================================================================
-
-export function ReviewsCell({ launchId }: { launchId: string }) {
-  const [reviews, setReviews] = useState<LaunchReview[]>([]);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from('launch_reviews')
-      .select('*')
-      .eq('launch_id', launchId)
-      .then(({ data }) => {
-        if (data) setReviews(data as LaunchReview[]);
-      });
-  }, [launchId]);
-
-  const approvedCount = reviews.filter(r => r.status === 'APPROVED').length;
-  const requiredCount = reviews.filter(r => r.status !== 'FYI' && r.status !== 'NOT_REQUIRED').length;
-  const pendingCount = reviews.filter(r => isBlockingReview(r.status)).length;
-  const progressPct = requiredCount > 0 ? (approvedCount / requiredCount) * 100 : 0;
-  const allDone = requiredCount > 0 && approvedCount === requiredCount;
-
-  if (requiredCount === 0) {
-    return <span className="text-muted text-sm">—</span>;
-  }
-
-  return (
-    <div className="reviews-cell">
-      <span className="reviews-count">{approvedCount}/{requiredCount}</span>
-      <div className="reviews-bar">
-        <div
-          className={`reviews-bar-fill ${allDone ? 'reviews-bar-fill--done' : ''}`}
-          style={{ width: `${progressPct}%` }}
-        />
-      </div>
-      {pendingCount > 0 && (
-        <span className="todo-badge">▸ {pendingCount} to-do{pendingCount !== 1 ? 's' : ''}</span>
-      )}
-    </div>
-  );
-}
 
 // ============================================================================
 // "Owned by you" columns — used on dashboard + /owned
@@ -108,7 +62,9 @@ export function getOwnedColumns(): ColumnDef<Launch>[] {
       key: 'reviews',
       header: 'Reviews completed',
       className: 'col-reviews',
-      render: (launch) => <ReviewsCell launchId={launch.id} />,
+      render: (launch) => (
+        <Link href={`/launches/${launch.id}`} className="text-secondary">View →</Link>
+      ),
     },
   ];
 }

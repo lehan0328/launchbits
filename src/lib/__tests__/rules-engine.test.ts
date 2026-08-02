@@ -2,9 +2,8 @@ import { describe, test, expect } from 'vitest';
 import {
   evaluateRequiredReviews,
   calculateSloDueDate,
-  DEFAULT_RULES,
 } from '@/lib/rules-engine';
-import type { Launch, ReviewDefinition } from '@/lib/types';
+import type { ReviewDefinition } from '@/lib/types';
 
 // ── Test Fixtures ────────────────────────────────────────────────────────────
 

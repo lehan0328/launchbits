@@ -2,10 +2,8 @@ import { describe, test, expect } from 'vitest';
 import {
   hasRole,
   canCreateLaunch,
-  canViewLaunch,
   canEditLaunch,
   canSubmitForReview,
-  canMarkLaunched,
   canLaunchWithException,
   canCancelLaunch,
   canReview,

@@ -6,7 +6,7 @@ import type { LaunchReview, Launch, LaunchEvent, User } from '@/lib/types';
 import {
   statusTagClass, statusLabel, riskDotClass, riskTagClass,
   reviewStatusLabel, formatDate, formatDateTime,
-  relativeTime, eventTypeLabel, isBlockingReview,
+  eventTypeLabel, isBlockingReview,
 } from '@/lib/utils';
 import {
   DATA_LABELS, PURPOSE_LABELS, NETWORK_LABELS,
@@ -374,7 +374,7 @@ function ReviewGroup({ group, launchId, user, launchOwnerId }: { group: ReviewGr
   );
 }
 
-function ReviewRow({ review, launchId, user, launchOwnerId }: { review: LaunchReview; launchId: string; user: User; launchOwnerId: string }) {
+function ReviewRow({ review, launchId: _launchId, user, launchOwnerId }: { review: LaunchReview; launchId: string; user: User; launchOwnerId: string }) {
   const [showActions, setShowActions] = useState(false);
   const [notes, setNotes] = useState('');
   const [isPending, startTransition] = useTransition();

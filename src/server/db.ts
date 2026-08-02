@@ -276,7 +276,7 @@ export async function getReviewsForLaunch(launchId: string): Promise<LaunchRevie
 
 export async function getPendingReviewsForUser(
   orgId: string,
-  userId: string
+  _userId: string
 ): Promise<ReviewWithLaunch[]> {
   const supabase = await createClient();
 
