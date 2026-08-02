@@ -7,11 +7,8 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const allLaunches = await getLaunches(user.org_id);
+  const launches = await getLaunches(user.org_id);
   const pendingReviews = await getPendingReviewsForUser(user.org_id, user.id);
-
-  // Filter out drafts — they belong in /drafts, not the dashboard
-  const launches = allLaunches.filter(l => l.status !== 'DRAFT');
 
   // Deduplicate by launch — multiple reviews can point to the same launch
   const seen = new Set<string>();
