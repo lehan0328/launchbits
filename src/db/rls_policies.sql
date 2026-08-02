@@ -9,7 +9,8 @@
 
 -- ── Helper function: get the current user's org_id ──────────────────────────
 -- Used by all RLS policies to scope data access.
-CREATE OR REPLACE FUNCTION auth.user_org_id()
+-- Placed in public schema (auth schema is managed by Supabase).
+CREATE OR REPLACE FUNCTION public.user_org_id()
 RETURNS UUID AS $$
   SELECT org_id FROM public.users
   WHERE email = auth.jwt()->>'email'
@@ -24,13 +25,13 @@ ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view their own org"
   ON organizations FOR SELECT TO authenticated
-  USING (id = auth.user_org_id());
+  USING (id = public.user_org_id());
 
 -- Only admins can update org settings (future: enforce in server actions too)
 CREATE POLICY "Admins can update their org"
   ON organizations FOR UPDATE TO authenticated
-  USING (id = auth.user_org_id())
-  WITH CHECK (id = auth.user_org_id());
+  USING (id = public.user_org_id())
+  WITH CHECK (id = public.user_org_id());
 
 -- ============================================================================
 -- USERS
@@ -40,7 +41,7 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view org members"
   ON users FOR SELECT TO authenticated
-  USING (org_id = auth.user_org_id());
+  USING (org_id = public.user_org_id());
 
 -- Allow insert for auto-provisioning (user's own record)
 CREATE POLICY "Users can insert own profile"
@@ -61,16 +62,16 @@ ALTER TABLE launches ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Org members can view launches"
   ON launches FOR SELECT TO authenticated
-  USING (org_id = auth.user_org_id());
+  USING (org_id = public.user_org_id());
 
 CREATE POLICY "Org members can create launches"
   ON launches FOR INSERT TO authenticated
-  WITH CHECK (org_id = auth.user_org_id());
+  WITH CHECK (org_id = public.user_org_id());
 
 CREATE POLICY "Org members can update launches"
   ON launches FOR UPDATE TO authenticated
-  USING (org_id = auth.user_org_id())
-  WITH CHECK (org_id = auth.user_org_id());
+  USING (org_id = public.user_org_id())
+  WITH CHECK (org_id = public.user_org_id());
 
 -- Soft delete only (status → CANCELLED), no hard delete policy
 -- CREATE POLICY "No delete" ON launches FOR DELETE TO authenticated USING (false);
@@ -87,7 +88,7 @@ CREATE POLICY "Org members can view launch owners"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_owners.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -97,7 +98,7 @@ CREATE POLICY "Org members can manage launch owners"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_owners.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -107,7 +108,7 @@ CREATE POLICY "Org members can remove launch owners"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_owners.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -119,16 +120,16 @@ ALTER TABLE review_definitions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Org members can view review definitions"
   ON review_definitions FOR SELECT TO authenticated
-  USING (org_id = auth.user_org_id());
+  USING (org_id = public.user_org_id());
 
 CREATE POLICY "Org members can create review definitions"
   ON review_definitions FOR INSERT TO authenticated
-  WITH CHECK (org_id = auth.user_org_id());
+  WITH CHECK (org_id = public.user_org_id());
 
 CREATE POLICY "Org members can update review definitions"
   ON review_definitions FOR UPDATE TO authenticated
-  USING (org_id = auth.user_org_id())
-  WITH CHECK (org_id = auth.user_org_id());
+  USING (org_id = public.user_org_id())
+  WITH CHECK (org_id = public.user_org_id());
 
 -- ============================================================================
 -- LAUNCH REVIEWS
@@ -142,7 +143,7 @@ CREATE POLICY "Org members can view launch reviews"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_reviews.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -152,7 +153,7 @@ CREATE POLICY "Org members can create launch reviews"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_reviews.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -162,7 +163,7 @@ CREATE POLICY "Org members can update launch reviews"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_reviews.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -181,7 +182,7 @@ CREATE POLICY "Org members can view launch events"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_events.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -192,7 +193,7 @@ CREATE POLICY "Org members can insert launch events"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_events.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -210,7 +211,7 @@ CREATE POLICY "Org members can view launch artifacts"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_artifacts.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -220,7 +221,7 @@ CREATE POLICY "Org members can manage launch artifacts"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = launch_artifacts.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -236,7 +237,7 @@ CREATE POLICY "Org members can view check runs"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = github_check_runs.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
 
@@ -246,6 +247,6 @@ CREATE POLICY "Org members can manage check runs"
     EXISTS (
       SELECT 1 FROM launches
       WHERE launches.id = github_check_runs.launch_id
-      AND launches.org_id = auth.user_org_id()
+      AND launches.org_id = public.user_org_id()
     )
   );
