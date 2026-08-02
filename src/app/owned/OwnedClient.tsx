@@ -63,18 +63,16 @@ export default function OwnedClient({ launches }: { launches: Launch[] }) {
         onSortChange={setSortField}
         sortAsc={sortAsc}
         onToggleSort={() => setSortAsc(prev => !prev)}
-        actions={
-          <div className="toolbar-filter-group">
-            <select
-              className="toolbar-filter-select"
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-            >
-              {STATUS_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
+        filters={
+          <select
+            className="toolbar-filter-select"
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+          >
+            {STATUS_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         }
       />
 

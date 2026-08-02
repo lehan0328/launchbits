@@ -37,7 +37,9 @@ interface TableToolbarProps {
   onSortChange?: (value: string) => void;
   sortAsc: boolean;
   onToggleSort: () => void;
-  /** Additional actions on the right side */
+  /** Extra filter controls rendered after the sort controls */
+  filters?: ReactNode;
+  /** Additional actions on the right side (defaults to Export) */
   actions?: ReactNode;
 }
 
@@ -48,6 +50,7 @@ export function TableToolbar({
   onSortChange,
   sortAsc,
   onToggleSort,
+  filters,
   actions,
 }: TableToolbarProps) {
   return (
@@ -76,6 +79,12 @@ export function TableToolbar({
         >
           {sortAsc ? '↑' : '↓'}
         </button>
+        {filters && (
+          <>
+            <span className="toolbar-divider" />
+            {filters}
+          </>
+        )}
       </div>
       <div className="table-toolbar-right">
         {actions ?? (

@@ -131,7 +131,7 @@ export function getReviewColumns(): ColumnDef<ReviewWithLaunch>[] {
   return [
     {
       key: 'launch-id',
-      header: 'Launch ID',
+      header: 'ID',
       className: 'col-id',
       render: (review) => (
         <Link href={`/launches/${review.launch_id}`}>
