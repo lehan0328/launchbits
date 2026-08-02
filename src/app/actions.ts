@@ -11,10 +11,16 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/server/supabase';
-import { getCurrentUser, createLaunch, updateLaunch, addEvent, addReview, getReviewDefinitions } from '@/server/db';
+import {
+  getCurrentUser, createLaunch, updateLaunch, addEvent, addReview,
+  getReviewDefinitions, updateReview, getLaunchById, getReviewsForLaunch,
+} from '@/server/db';
 import { calculateRiskLevel } from '@/lib/risk-calculator';
 import { evaluateRequiredReviews, DEFAULT_RULES } from '@/lib/rules-engine';
-import type { LaunchFormData, RiskLevel } from '@/lib/types';
+import { canReview, canDowngradeToFyi } from '@/lib/permissions';
+import { assertValidTransition } from '@/lib/state-machine';
+import { isBlockingReview } from '@/lib/utils';
+import type { LaunchFormData, RiskLevel, ReviewStatus } from '@/lib/types';
 
 // ── Create Launch ───────────────────────────────────────────────────────────
 
@@ -167,6 +173,152 @@ export async function submitForReviewAction(launchId: string, formData: LaunchFo
   revalidatePath('/');
   revalidatePath('/reviews');
   redirect(`/launches/${launchId}`);
+}
+
+// ── Approve Review ──────────────────────────────────────────────────────────
+
+export async function approveReviewAction(reviewId: string, notes: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Fetch the review to check permissions
+  const launch = await getLaunchForReview(reviewId);
+  if (!launch) throw new Error('Launch not found');
+
+  const reviews = await getReviewsForLaunch(launch.id);
+  const review = reviews.find(r => r.id === reviewId);
+  if (!review) throw new Error('Review not found');
+
+  // Permission check
+  if (!canReview(user, review, [launch.created_by])) {
+    throw new Error('You do not have permission to approve this review');
+  }
+
+  // Update the review
+  const updated = await updateReview(reviewId, {
+    status: 'APPROVED' as ReviewStatus,
+    reviewed_by: user.id,
+    reviewed_by_name: user.display_name,
+    reviewed_at: new Date().toISOString(),
+    notes: notes || null,
+  });
+  if (!updated) throw new Error('Failed to update review');
+
+  // Log audit event
+  await addEvent(launch.id, launch.version, 'REVIEW_APPROVED', user.id, {
+    new_val: { review: review.label, notes },
+  });
+
+  // Check if all blocking reviews are now approved → auto-transition to APPROVED
+  const updatedReviews = await getReviewsForLaunch(launch.id);
+  const stillBlocking = updatedReviews.filter(r => isBlockingReview(r.status));
+  if (stillBlocking.length === 0 && launch.status === 'IN_REVIEW') {
+    await updateLaunch(launch.id, { status: 'APPROVED' });
+    await addEvent(launch.id, launch.version, 'LAUNCH_APPROVED', user.id, {
+      new_val: { reason: 'All blocking reviews approved' },
+    });
+  }
+
+  revalidatePath(`/launches/${launch.id}`);
+  revalidatePath('/');
+  revalidatePath('/reviews');
+}
+
+// ── Request Changes ─────────────────────────────────────────────────────────
+
+export async function requestChangesAction(reviewId: string, notes: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  if (!notes || notes.trim().length === 0) {
+    throw new Error('Notes are required when requesting changes');
+  }
+
+  const launch = await getLaunchForReview(reviewId);
+  if (!launch) throw new Error('Launch not found');
+
+  const reviews = await getReviewsForLaunch(launch.id);
+  const review = reviews.find(r => r.id === reviewId);
+  if (!review) throw new Error('Review not found');
+
+  if (!canReview(user, review, [launch.created_by])) {
+    throw new Error('You do not have permission to request changes on this review');
+  }
+
+  const updated = await updateReview(reviewId, {
+    status: 'NEEDS_WORK' as ReviewStatus,
+    reviewed_by: user.id,
+    reviewed_by_name: user.display_name,
+    reviewed_at: new Date().toISOString(),
+    notes: notes,
+  });
+  if (!updated) throw new Error('Failed to update review');
+
+  await addEvent(launch.id, launch.version, 'REVIEW_CHANGES_REQUESTED', user.id, {
+    new_val: { review: review.label, notes },
+  });
+
+  revalidatePath(`/launches/${launch.id}`);
+  revalidatePath('/');
+  revalidatePath('/reviews');
+}
+
+// ── Mark as FYI ─────────────────────────────────────────────────────────────
+
+export async function markFyiAction(reviewId: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const launch = await getLaunchForReview(reviewId);
+  if (!launch) throw new Error('Launch not found');
+
+  const reviews = await getReviewsForLaunch(launch.id);
+  const review = reviews.find(r => r.id === reviewId);
+  if (!review) throw new Error('Review not found');
+
+  if (!canDowngradeToFyi(user, review, [launch.created_by])) {
+    throw new Error('This review cannot be downgraded to FYI');
+  }
+
+  const updated = await updateReview(reviewId, {
+    status: 'FYI' as ReviewStatus,
+    reviewed_by: user.id,
+    reviewed_by_name: user.display_name,
+    reviewed_at: new Date().toISOString(),
+  });
+  if (!updated) throw new Error('Failed to update review');
+
+  await addEvent(launch.id, launch.version, 'REVIEW_MARKED_FYI', user.id, {
+    new_val: { review: review.label },
+  });
+
+  // Re-check if all blocking reviews are now resolved
+  const updatedReviews = await getReviewsForLaunch(launch.id);
+  const stillBlocking = updatedReviews.filter(r => isBlockingReview(r.status));
+  if (stillBlocking.length === 0 && launch.status === 'IN_REVIEW') {
+    await updateLaunch(launch.id, { status: 'APPROVED' });
+    await addEvent(launch.id, launch.version, 'LAUNCH_APPROVED', user.id, {
+      new_val: { reason: 'All blocking reviews resolved' },
+    });
+  }
+
+  revalidatePath(`/launches/${launch.id}`);
+  revalidatePath('/');
+  revalidatePath('/reviews');
+}
+
+// ── Helper: get launch from review ID ───────────────────────────────────────
+
+async function getLaunchForReview(reviewId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('launch_reviews')
+    .select('launch_id')
+    .eq('id', reviewId)
+    .single();
+
+  if (error || !data) return null;
+  return getLaunchById(data.launch_id);
 }
 
 // ── Sign Out ────────────────────────────────────────────────────────────────

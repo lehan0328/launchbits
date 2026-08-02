@@ -636,9 +636,104 @@ a:hover { color: var(--link-color-hover); }
   font-weight: 500;
   color: var(--color-primary);
   text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
 }
 
 .review-action-link:hover { text-decoration: underline; }
+
+/* Review Action Panel (expandable inline) */
+.review-actions-row td {
+  padding: 0 !important;
+}
+
+.review-actions-panel {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 4px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.review-notes-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 48px;
+  transition: border-color 0.15s;
+}
+
+.review-notes-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.review-notes-input:disabled {
+  opacity: 0.6;
+}
+
+.review-actions-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.review-action-error {
+  font-size: 12px;
+  color: #ef4444;
+  padding: 4px 0;
+}
+
+.btn-approve {
+  background: #059669;
+  color: white;
+  border: none;
+}
+.btn-approve:hover:not(:disabled) {
+  background: #047857;
+}
+
+.btn-request-changes {
+  background: #d97706;
+  color: white;
+  border: none;
+}
+.btn-request-changes:hover:not(:disabled) {
+  background: #b45309;
+}
+
+.btn-fyi {
+  background: var(--surface-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+.btn-fyi:hover:not(:disabled) {
+  background: var(--surface-secondary);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* Form / New Launch */
 .app-header-title {

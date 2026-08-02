@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import type { LaunchReview, Launch, LaunchEvent } from '@/lib/types';
+import type { LaunchReview, Launch, LaunchEvent, User } from '@/lib/types';
 import {
   statusTagClass, statusLabel, riskDotClass, riskTagClass,
   reviewStatusLabel, formatDate, formatDateTime,
@@ -12,6 +12,8 @@ import {
   DATA_LABELS, PURPOSE_LABELS, NETWORK_LABELS,
   AUTH_LABELS, SHARING_LABELS, mapLabels,
 } from '@/lib/labels';
+import { canReview, canDowngradeToFyi } from '@/lib/permissions';
+import { approveReviewAction, requestChangesAction, markFyiAction } from '@/app/actions';
 
 // ============================================================================
 // Review status → CSS class mapping
@@ -52,9 +54,10 @@ interface LaunchDetailClientProps {
   launch: Launch | null;
   reviews: LaunchReview[];
   events: LaunchEvent[];
+  user: User;
 }
 
-export default function LaunchDetailClient({ launch, reviews, events }: LaunchDetailClientProps) {
+export default function LaunchDetailClient({ launch, reviews, events, user }: LaunchDetailClientProps) {
 
   const [activeTab, setActiveTab] = useState<'details' | 'activity'>('details');
   const [fyiExpanded, setFyiExpanded] = useState(false);
@@ -260,7 +263,7 @@ export default function LaunchDetailClient({ launch, reviews, events }: LaunchDe
               </thead>
               <tbody>
                 {groupedReviews.map(group => (
-                  <ReviewGroup key={group.type} group={group} launchId={launch.id} />
+                  <ReviewGroup key={group.type} group={group} launchId={launch.id} user={user} launchOwnerId={launch.created_by} />
                 ))}
               </tbody>
             </table>
@@ -277,7 +280,7 @@ export default function LaunchDetailClient({ launch, reviews, events }: LaunchDe
                     <table className="reviews-table">
                       <tbody>
                         {fyiReviews.map(review => (
-                          <ReviewRow key={review.id} review={review} launchId={launch.id} />
+                          <ReviewRow key={review.id} review={review} launchId={launch.id} user={user} launchOwnerId={launch.created_by} />
                         ))}
                       </tbody>
                     </table>
@@ -355,7 +358,7 @@ function groupReviewsByType(reviews: LaunchReview[]): ReviewGroupData[] {
   });
 }
 
-function ReviewGroup({ group, launchId }: { group: ReviewGroupData; launchId: string }) {
+function ReviewGroup({ group, launchId, user, launchOwnerId }: { group: ReviewGroupData; launchId: string; user: User; launchOwnerId: string }) {
   return (
     <>
       <tr className="review-group-header">
@@ -365,43 +368,143 @@ function ReviewGroup({ group, launchId }: { group: ReviewGroupData; launchId: st
         </td>
       </tr>
       {group.reviews.map(review => (
-        <ReviewRow key={review.id} review={review} launchId={launchId} />
+        <ReviewRow key={review.id} review={review} launchId={launchId} user={user} launchOwnerId={launchOwnerId} />
       ))}
     </>
   );
 }
 
-function ReviewRow({ review, launchId }: { review: LaunchReview; launchId: string }) {
+function ReviewRow({ review, launchId, user, launchOwnerId }: { review: LaunchReview; launchId: string; user: User; launchOwnerId: string }) {
+  const [showActions, setShowActions] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const userCanReview = canReview(user, review, [launchOwnerId]);
+  const userCanFyi = canDowngradeToFyi(user, review, [launchOwnerId]);
+  const isPendingReview = isBlockingReview(review.status);
+
+  function handleApprove() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await approveReviewAction(review.id, notes);
+        setShowActions(false);
+        setNotes('');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to approve');
+      }
+    });
+  }
+
+  function handleRequestChanges() {
+    if (!notes.trim()) {
+      setError('Please add notes explaining what changes are needed');
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      try {
+        await requestChangesAction(review.id, notes);
+        setShowActions(false);
+        setNotes('');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to request changes');
+      }
+    });
+  }
+
+  function handleMarkFyi() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await markFyiAction(review.id);
+        setShowActions(false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to mark as FYI');
+      }
+    });
+  }
+
   return (
-    <tr>
-      <td>
-        <span className="review-name-link">{review.label}</span>
-      </td>
-      <td>
-        <span className={`review-status-tag ${reviewStatusTagClass(review.status)}`}>
-          {reviewStatusLabel(review.status)}
-        </span>
-      </td>
-      <td>
-        {review.reviewed_by_name ? (
-          <span className="assignee-cell">
-            <span className="assignee-avatar">{getInitials(review.reviewed_by_name)}</span>
-            {review.reviewed_by_name}
+    <>
+      <tr>
+        <td>
+          <span className="review-name-link">{review.label}</span>
+        </td>
+        <td>
+          <span className={`review-status-tag ${reviewStatusTagClass(review.status)}`}>
+            {reviewStatusLabel(review.status)}
           </span>
-        ) : (
-          <span className="text-muted text-sm">—</span>
-        )}
-      </td>
-      <td>
-        {isBlockingReview(review.status) ? (
-          <Link href={`/launches/${launchId}`} className="review-action-link">
-            Review →
-          </Link>
-        ) : (
-          <span className="text-muted text-sm">—</span>
-        )}
-      </td>
-    </tr>
+        </td>
+        <td>
+          {review.reviewed_by_name ? (
+            <span className="assignee-cell">
+              <span className="assignee-avatar">{getInitials(review.reviewed_by_name)}</span>
+              {review.reviewed_by_name}
+            </span>
+          ) : (
+            <span className="text-muted text-sm">—</span>
+          )}
+        </td>
+        <td>
+          {userCanReview && isPendingReview ? (
+            <button
+              className="review-action-link"
+              onClick={() => setShowActions(!showActions)}
+            >
+              {showActions ? 'Cancel' : 'Review →'}
+            </button>
+          ) : review.notes ? (
+            <span className="text-muted text-sm" title={review.notes}>📝 {review.notes.slice(0, 40)}{review.notes.length > 40 ? '…' : ''}</span>
+          ) : (
+            <span className="text-muted text-sm">—</span>
+          )}
+        </td>
+      </tr>
+      {showActions && (
+        <tr className="review-actions-row">
+          <td colSpan={4}>
+            <div className="review-actions-panel">
+              <textarea
+                className="review-notes-input"
+                placeholder="Add review notes (required for Request Changes)..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                disabled={isPending}
+              />
+              {error && <div className="review-action-error">{error}</div>}
+              <div className="review-actions-buttons">
+                <button
+                  className="btn btn-approve btn-sm"
+                  onClick={handleApprove}
+                  disabled={isPending}
+                >
+                  {isPending ? '...' : '✓ Approve'}
+                </button>
+                <button
+                  className="btn btn-request-changes btn-sm"
+                  onClick={handleRequestChanges}
+                  disabled={isPending}
+                >
+                  {isPending ? '...' : '✎ Request Changes'}
+                </button>
+                {userCanFyi && (
+                  <button
+                    className="btn btn-fyi btn-sm"
+                    onClick={handleMarkFyi}
+                    disabled={isPending}
+                  >
+                    {isPending ? '...' : '👁 Mark FYI'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 

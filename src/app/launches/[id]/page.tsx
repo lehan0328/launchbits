@@ -16,5 +16,5 @@ export default async function LaunchDetailPage({ params }: { params: Promise<{ i
       ])
     : [[], []];
 
-  return <LaunchDetailClient launch={launch} reviews={reviews} events={events} />;
+  return <LaunchDetailClient launch={launch} reviews={reviews} events={events} user={user} />;
 }
