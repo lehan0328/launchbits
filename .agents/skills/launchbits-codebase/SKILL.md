@@ -13,10 +13,8 @@ description: >
 ## 1 · Database Layer (Supabase / PostgreSQL)
 
 ### Schema
-- **Source of truth**: [schema.sql](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/db/schema.sql) — run in Supabase SQL Editor
-- **RLS policies**: [rls_policies.sql](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/db/rls_policies.sql) — org-scoped RLS on all 8 tables
-- **Helper function**: `public.user_org_id()` — SECURITY DEFINER function that returns the current user's org_id
-- **Seed data**: [seed.sql](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/db/seed.sql) — demo org, 4 users, 4 launches, 7 reviews, 4 events
+- **Migrations**: `supabase/migrations/` — versioned SQL files managed by Supabase CLI
+- **RLS policies**: included in migrations; `public.user_org_id()` SECURITY DEFINER helper
 - **Key tables**: `organizations`, `users`, `launches`, `launch_owners`, `launch_reviews`, `launch_events`, `review_definitions`
 - **Enums**: `launch_status` (DRAFT → IN_REVIEW → APPROVED → LAUNCHED → ...), `review_status` (PENDING_REVIEW, APPROVED, FYI, ...)
 
@@ -62,11 +60,11 @@ User → /login → Google OAuth or Magic Link
 ### Supabase Clients
 | File | Context | Usage |
 |------|---------|-------|
-| [supabase/server.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase/server.ts) | Server Components, Server Actions, Route Handlers | Cookie-based session via `cookies()`. Subject to RLS. |
-| [supabase/client.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase/client.ts) | Client Components (rare) | Browser-side, used only for ReviewsCell |
-| [supabase/admin.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase/admin.ts) | Server-only admin operations | Uses `SUPABASE_SERVICE_ROLE_KEY`, **bypasses RLS**. Only for user auto-provisioning. |
+| [server/supabase.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/supabase.ts) | Server Components, Server Actions, Route Handlers | Cookie-based session via `cookies()`. Subject to RLS. |
+| [lib/supabase-client.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase-client.ts) | Client Components (rare) | Browser-side, used only for ReviewsCell |
+| [server/admin.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/admin.ts) | Server-only admin operations | Uses `SUPABASE_SERVICE_ROLE_KEY`, **bypasses RLS**. Only for user auto-provisioning. |
 
-### Data Access Layer — [db.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/db.ts)
+### Data Access Layer — [server/db.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/db.ts)
 All reads go through `db.ts`. Functions are async, server-side only:
 
 | Function | Returns | Used By |
@@ -96,15 +94,15 @@ All writes go through Server Actions. Each action: authenticates → validates �
 | `signOutAction()` | TopBar avatar click |
 
 ### Adding a New Query
-1. Add async function to `db.ts`
-2. Use `const supabase = await createClient()` (from `supabase/server.ts`)
+1. Add async function to `server/db.ts`
+2. Use `const supabase = await createClient()` (from `server/supabase.ts`)
 3. Always scope queries by `org_id` for multi-tenancy
 4. Return typed results with explicit `as` casts
 
 ### Adding a New Mutation
 1. Add `'use server'` function to `actions.ts`
-2. Call `getCurrentUser()` first (auth guard)
-3. Use `db.ts` functions for the actual query
+2. Call `getCurrentUser()` first (auth guard) — import from `@/server/db`
+3. Use `server/db.ts` functions for the actual query
 4. Call `addEvent(...)` to log an audit trail entry
 5. Call `revalidatePath(...)` for affected routes
 6. Call `redirect(...)` to navigate after completion
@@ -173,11 +171,21 @@ src/
 │   ├── DataTable.tsx
 │   ├── LaunchForm.tsx
 │   ├── Sidebar.tsx
-│   └── TopBar.tsx
+│   ├── TopBar.tsx
+│   └── columns.tsx             # Column definitions ('use client')
 ├── contexts/
 │   └── SidebarContext.tsx
+├── server/                      # Server-only code
+│   ├── db.ts                    # Data access layer
+│   ├── supabase.ts              # Server Supabase client
+│   └── admin.ts                 # Admin client (bypasses RLS)
 ├── middleware.ts
-└── lib/                         # Pure logic (see layers 3 and 5)
+└── lib/                         # Shared pure logic (no I/O)
+    ├── types.ts
+    ├── utils.ts
+    ├── labels.ts
+    ├── supabase-client.ts       # Browser Supabase client
+    └── ... (business logic modules)
 ```
 
 ### Component Reuse Rules
@@ -201,7 +209,7 @@ src/
 
 ```tsx
 // ✅ Correct pattern
-import { getCurrentUser, getLaunches } from '@/lib/db';
+import { getCurrentUser, getLaunches } from '@/server/db';
 import { redirect } from 'next/navigation';
 import MyClient from './MyClient';
 
@@ -214,7 +222,7 @@ export default async function MyPage() {
 ```
 
 ### Adding a New Table View
-1. Define columns in [columns.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/columns.tsx) using `ColumnDef<T>`
+1. Define columns in [columns.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/components/columns.tsx) using `ColumnDef<T>`
 2. Use `DataTable` + `TableToolbar` from `DataTable.tsx`
 3. Reuse `ReviewsCell` for review progress bars
 
@@ -234,7 +242,7 @@ These modules contain zero I/O — pure functions for computation and configurat
 | [state-machine.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/state-machine.ts) | Launch status FSM transitions | **Not yet wired to server actions** |
 | [utils.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/utils.ts) | Formatting, label helpers, status mappers | `statusLabel()`, `formatDate()`, `relativeTime()` |
 | [labels.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/labels.ts) | Display label maps | `DATA_LABELS`, `PURPOSE_LABELS`, `mapLabels()` |
-| [columns.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/columns.tsx) | DataTable column definitions | `getOwnedColumns()`, `getReviewColumns()`, `ReviewsCell` |
+| [columns.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/components/columns.tsx) | DataTable column definitions (`'use client'`) | `getOwnedColumns()`, `getReviewColumns()`, `ReviewsCell` |
 
 ### Adding a New Type
 1. Add to `types.ts` — use union types for enums (e.g., `type Foo = 'A' | 'B'`)
