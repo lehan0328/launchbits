@@ -203,18 +203,7 @@ CREATE INDEX idx_launch_events_type ON launch_events(event_type);
 CREATE INDEX idx_github_checks ON github_check_runs(repo_full_name, pr_number);
 
 -- ============================================================================
--- SECURITY: Make event log append-only (no UPDATE or DELETE)
+-- ROW LEVEL SECURITY
+-- See rls_policies.sql for org-scoped RLS policies on all tables.
+-- Run rls_policies.sql AFTER this schema to enable data isolation.
 -- ============================================================================
-
--- RLS policy: events can only be inserted, never updated or deleted
-ALTER TABLE launch_events ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY events_insert_only ON launch_events
-    FOR INSERT TO authenticated
-    WITH CHECK (true);
-
-CREATE POLICY events_select ON launch_events
-    FOR SELECT TO authenticated
-    USING (true);
-
--- No UPDATE or DELETE policies = effectively immutable
