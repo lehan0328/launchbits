@@ -12,6 +12,7 @@
 
 import { createClient } from '@/server/supabase';
 import { createAdminClient } from '@/server/admin';
+import { PG_UNIQUE_VIOLATION, PGRST_NO_ROWS } from '@/lib/db-errors';
 import type {
   Organization, User, Launch, LaunchReview,
   LaunchEvent, ReviewDefinition, ReviewWithLaunch,
@@ -96,7 +97,7 @@ export async function getCurrentUser(): Promise<User | null> {
   if (error) {
     // Race condition: another request already inserted this user.
     // Fetch the existing row instead of failing.
-    if (error.code === '23505' || error.code === 'PGRST116') {
+    if (error.code === PG_UNIQUE_VIOLATION || error.code === PGRST_NO_ROWS) {
       const { data: raceUser } = await admin
         .from('users')
         .select('*')
