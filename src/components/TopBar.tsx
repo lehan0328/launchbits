@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSidebar } from '@/contexts/SidebarContext';
@@ -13,7 +13,9 @@ interface TopBarProps {
 
 export default function TopBar({ user }: TopBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
   const { toggle } = useSidebar();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Generate initials from display name
   const initials = user.display_name
@@ -22,6 +24,19 @@ export default function TopBar({ user }: TopBarProps) {
     .join('')
     .slice(0, 2)
     .toUpperCase();
+
+  // Close menu on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [menuOpen]);
 
   return (
     <header className="global-topbar">
@@ -64,17 +79,42 @@ export default function TopBar({ user }: TopBarProps) {
         </div>
       </div>
 
-      <div className="topbar-right">
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className="topbar-avatar"
-            title={`${user.display_name} — Sign out`}
-          >
-            {initials}
-          </button>
-        </form>
+      <div className="topbar-right" ref={menuRef}>
+        <button
+          className="topbar-avatar"
+          onClick={() => setMenuOpen(!menuOpen)}
+          title={user.display_name}
+        >
+          {initials}
+        </button>
+
+        {menuOpen && (
+          <div className="profile-dropdown">
+            <div className="profile-dropdown-header">
+              <div className="profile-dropdown-avatar">{initials}</div>
+              <div className="profile-dropdown-info">
+                <div className="profile-dropdown-name">{user.display_name}</div>
+                <div className="profile-dropdown-email">{user.email}</div>
+              </div>
+            </div>
+            <div className="profile-dropdown-divider" />
+            <Link
+              href="/settings"
+              className="profile-dropdown-item"
+              onClick={() => setMenuOpen(false)}
+            >
+              ⚙️ Settings
+            </Link>
+            <div className="profile-dropdown-divider" />
+            <form action={signOutAction}>
+              <button type="submit" className="profile-dropdown-item profile-dropdown-signout">
+                Sign out
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </header>
   );
 }
+
