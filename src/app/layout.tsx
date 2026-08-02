@@ -10,6 +10,10 @@ import { Analytics } from "@vercel/analytics/next";
 export const metadata: Metadata = {
   title: "Launchbits — Launch Governance Platform",
   description: "Cross-functional feature launch governance. Connect code changes to mandatory privacy, security, and legal sign-offs before anything ships.",
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
 };
 
 // Paths that should never show the app shell (sidebar/topbar)
