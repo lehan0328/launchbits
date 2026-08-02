@@ -2067,12 +2067,12 @@ a:hover { color: var(--link-color-hover); }
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--color-primary);
   color: white;
-  font-size: 14px;
+  font-size: 18px;
   flex-shrink: 0;
   font-weight: 700;
 }
