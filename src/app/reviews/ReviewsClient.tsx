@@ -1,6 +1,7 @@
 'use client';
 
-import { DataTable } from '@/components/DataTable';
+import { useState, useMemo } from 'react';
+import { DataTable, TableToolbar } from '@/components/DataTable';
 import { getReviewColumns } from '@/components/columns';
 import type { ReviewWithLaunch } from '@/lib/types';
 
@@ -9,10 +10,26 @@ export default function ReviewsClient({
 }: {
   pendingReviews: ReviewWithLaunch[];
 }) {
+  const [sortAsc, setSortAsc] = useState(false);
+
+  const sorted = useMemo(() => {
+    return [...pendingReviews].sort((a, b) => {
+      const da = new Date(a.slo_started_at || '0').getTime();
+      const db = new Date(b.slo_started_at || '0').getTime();
+      return sortAsc ? da - db : db - da;
+    });
+  }, [pendingReviews, sortAsc]);
+
   return (
     <div className="app-content">
+      <TableToolbar
+        sortLabel="Date Requested"
+        sortAsc={sortAsc}
+        onToggleSort={() => setSortAsc(prev => !prev)}
+      />
+
       <DataTable
-        data={pendingReviews}
+        data={sorted}
         columns={getReviewColumns()}
         expandable={false}
         emptyState={
@@ -24,6 +41,10 @@ export default function ReviewsClient({
           </div>
         }
       />
+
+      <div className="table-footer">
+        Showing {sorted.length} of {pendingReviews.length}
+      </div>
     </div>
   );
 }

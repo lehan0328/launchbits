@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { DataTable } from '@/components/DataTable';
+import { useState, useMemo } from 'react';
+import { DataTable, TableToolbar } from '@/components/DataTable';
 import { getOwnedColumns } from '@/components/columns';
 import type { Launch } from '@/lib/types';
 
@@ -11,41 +11,46 @@ const STATUS_OPTIONS = [
   { value: 'IN_REVIEW', label: 'In Review' },
   { value: 'APPROVED', label: 'Approved' },
   { value: 'LAUNCHED', label: 'Launched' },
-  { value: 'LAUNCHED_WITH_EXCEPTION', label: 'Launched with Exception' },
+  { value: 'LAUNCHED_WITH_EXCEPTION', label: 'Exception' },
   { value: 'CANCELLED', label: 'Cancelled' },
 ] as const;
 
 export default function OwnedClient({ launches }: { launches: Launch[] }) {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [sortAsc, setSortAsc] = useState(false);
 
-  const filtered = statusFilter === 'ALL'
-    ? launches
-    : launches.filter(l => l.status === statusFilter);
+  const filtered = useMemo(() => {
+    const base = statusFilter === 'ALL'
+      ? launches
+      : launches.filter(l => l.status === statusFilter);
+
+    return [...base].sort((a, b) => {
+      const da = new Date(a.target_date || a.updated_at).getTime();
+      const db = new Date(b.target_date || b.updated_at).getTime();
+      return sortAsc ? da - db : db - da;
+    });
+  }, [launches, statusFilter, sortAsc]);
 
   return (
     <div className="app-content">
-      <div className="page-header-bar">
-        <h1 className="page-title">Owned by you</h1>
-      </div>
-
-      {/* Filter toolbar — matches Ariane's dropdown approach */}
-      <div className="owned-toolbar">
-        <div className="owned-toolbar-filters">
-          <label className="owned-toolbar-label">Status</label>
-          <select
-            className="owned-toolbar-select"
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-          >
-            {STATUS_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-        <div className="owned-toolbar-count">
-          {filtered.length} of {launches.length}
-        </div>
-      </div>
+      <TableToolbar
+        sortLabel="Launch Date"
+        sortAsc={sortAsc}
+        onToggleSort={() => setSortAsc(prev => !prev)}
+        actions={
+          <div className="toolbar-filter-group">
+            <select
+              className="toolbar-filter-select"
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              {STATUS_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        }
+      />
 
       <DataTable
         data={filtered}
@@ -59,6 +64,10 @@ export default function OwnedClient({ launches }: { launches: Launch[] }) {
           </div>
         }
       />
+
+      <div className="table-footer">
+        Showing {filtered.length} of {launches.length}
+      </div>
     </div>
   );
 }

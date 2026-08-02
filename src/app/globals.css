@@ -2920,59 +2920,33 @@ a:hover { color: var(--link-color-hover); }
   margin-top: var(--sp-4);
 }
 
-/* ====== OWNED TOOLBAR (Ariane-style filter dropdown) ====== */
+/* ====== TOOLBAR FILTER (dropdown inside TableToolbar) ====== */
 
-.owned-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  padding: 8px 12px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--sp-4);
-}
-
-.owned-toolbar-filters {
+.toolbar-filter-group {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
 }
 
-.owned-toolbar-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  font-family: var(--font-heading);
-  white-space: nowrap;
-}
-
-.owned-toolbar-select {
+.toolbar-filter-select {
   padding: 5px 10px;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   font-family: var(--font-body);
-  color: var(--text-primary);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  background: none;
+  border: none;
   cursor: pointer;
-  min-width: 160px;
+  border-radius: 4px;
 }
 
-.owned-toolbar-select:hover {
-  border-color: var(--indigo-400);
+.toolbar-filter-select:hover {
+  background: var(--color-primary-container);
 }
 
-.owned-toolbar-select:focus {
+.toolbar-filter-select:focus {
   outline: none;
-  border-color: var(--indigo-500);
-  box-shadow: 0 0 0 2px var(--indigo-50);
+  background: var(--color-primary-container);
 }
 
-.owned-toolbar-count {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
 

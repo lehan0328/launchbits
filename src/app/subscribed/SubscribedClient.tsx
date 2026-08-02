@@ -1,18 +1,31 @@
 'use client';
 
-import { DataTable } from '@/components/DataTable';
+import { useState, useMemo } from 'react';
+import { DataTable, TableToolbar } from '@/components/DataTable';
 import { getOwnedColumns } from '@/components/columns';
 import type { Launch } from '@/lib/types';
 
 export default function SubscribedClient({ launches }: { launches: Launch[] }) {
+  const [sortAsc, setSortAsc] = useState(false);
+
+  const sorted = useMemo(() => {
+    return [...launches].sort((a, b) => {
+      const da = new Date(a.target_date || a.updated_at).getTime();
+      const db = new Date(b.target_date || b.updated_at).getTime();
+      return sortAsc ? da - db : db - da;
+    });
+  }, [launches, sortAsc]);
+
   return (
     <div className="app-content">
-      <div className="page-header-bar">
-        <h1 className="page-title">Subscribed</h1>
-      </div>
+      <TableToolbar
+        sortLabel="Launch Date"
+        sortAsc={sortAsc}
+        onToggleSort={() => setSortAsc(prev => !prev)}
+      />
 
       <DataTable
-        data={launches}
+        data={sorted}
         columns={getOwnedColumns()}
         emptyState={
           <div className="empty-state">
@@ -24,6 +37,10 @@ export default function SubscribedClient({ launches }: { launches: Launch[] }) {
           </div>
         }
       />
+
+      <div className="table-footer">
+        Showing {sorted.length} of {launches.length}
+      </div>
     </div>
   );
 }
