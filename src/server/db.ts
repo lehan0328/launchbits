@@ -151,23 +151,6 @@ export async function getLaunches(orgId: string): Promise<Launch[]> {
   return (data ?? []) as Launch[];
 }
 
-export async function getDraftLaunches(orgId: string, userId: string): Promise<Launch[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('launches')
-    .select('*')
-    .eq('org_id', orgId)
-    .eq('created_by', userId)
-    .eq('status', 'DRAFT')
-    .order('updated_at', { ascending: false });
-
-  if (error) {
-    console.error('getDraftLaunches error:', error);
-    return [];
-  }
-  return (data ?? []) as Launch[];
-}
-
 export async function getLaunchById(id: string): Promise<Launch | null> {
   const supabase = await createClient();
   const { data } = await supabase

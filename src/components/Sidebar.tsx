@@ -53,12 +53,6 @@ export default function Sidebar({ user }: SidebarProps) {
           Pending your approval
         </Link>
         <Link
-          href="/drafts"
-          className={`nav-link ${pathname === '/drafts' ? 'active' : ''}`}
-        >
-          Drafts
-        </Link>
-        <Link
           href="/subscribed"
           className={`nav-link ${pathname === '/subscribed' ? 'active' : ''}`}
         >
