@@ -197,6 +197,7 @@ export interface LaunchReview {
   label?: string;
   review_type?: ReviewType;
   reviewer_slack_channel?: string;
+  reviewer_emails?: string[];
 }
 
 /** Google: LaunchEvents (Prompt 1 §5) */

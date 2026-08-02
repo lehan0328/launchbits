@@ -227,6 +227,49 @@ describe('permissions', () => {
       });
       expect(canReview(user, review, [])).toBe(true);
     });
+
+    // ── reviewer_emails enforcement ───────────────────────────────────────────
+
+    test('access_restricted + reviewer_emails allows listed user', () => {
+      const user = makeUser({ email: 'alice@corp.com' });
+      const review = makeReview({ access_restricted: true });
+      expect(canReview(user, review, [], ['alice@corp.com', 'bob@corp.com'])).toBe(true);
+    });
+
+    test('access_restricted + reviewer_emails blocks unlisted user', () => {
+      const user = makeUser({ email: 'eve@corp.com' });
+      const review = makeReview({ access_restricted: true });
+      expect(canReview(user, review, [], ['alice@corp.com', 'bob@corp.com'])).toBe(false);
+    });
+
+    test('reviewer_emails check is case-insensitive', () => {
+      const user = makeUser({ email: 'Alice@Corp.COM' });
+      const review = makeReview({ access_restricted: true });
+      expect(canReview(user, review, [], ['alice@corp.com'])).toBe(true);
+    });
+
+    test('empty reviewer_emails allows anyone when access_restricted', () => {
+      const user = makeUser({ email: 'anyone@corp.com' });
+      const review = makeReview({ access_restricted: true });
+      expect(canReview(user, review, [], [])).toBe(true);
+    });
+
+    test('reviewer_emails ignored when access_restricted is false', () => {
+      const user = makeUser({ email: 'unlisted@corp.com' });
+      const review = makeReview({ access_restricted: false });
+      // Even though user is not in the email list, they can review because access is not restricted
+      expect(canReview(user, review, [], ['alice@corp.com'])).toBe(true);
+    });
+
+    test('owner_approval_disallowed takes priority over reviewer_emails', () => {
+      const owner = makeUser({ id: 'owner', email: 'owner@corp.com' });
+      const review = makeReview({
+        access_restricted: true,
+        owner_approval_disallowed: true,
+      });
+      // Owner is in the email list but still blocked by owner_approval_disallowed
+      expect(canReview(owner, review, ['owner'], ['owner@corp.com'])).toBe(false);
+    });
   });
 
   describe('canDowngradeToFyi', () => {

@@ -195,7 +195,7 @@ export async function approveReviewAction(reviewId: string, notes: string) {
   if (!review) throw new Error('Review not found');
 
   // Permission check
-  if (!canReview(user, review, [launch.created_by])) {
+  if (!canReview(user, review, [launch.created_by], review.reviewer_emails ?? [])) {
     throw new Error('You do not have permission to approve this review');
   }
 
@@ -246,7 +246,7 @@ export async function requestChangesAction(reviewId: string, notes: string) {
   const review = reviews.find(r => r.id === reviewId);
   if (!review) throw new Error('Review not found');
 
-  if (!canReview(user, review, [launch.created_by])) {
+  if (!canReview(user, review, [launch.created_by], review.reviewer_emails ?? [])) {
     throw new Error('You do not have permission to request changes on this review');
   }
 

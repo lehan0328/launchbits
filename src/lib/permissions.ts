@@ -91,14 +91,15 @@ export function canCancelLaunch(user: User, launch: Launch, ownerIds: string[]):
  * Check if a user can approve/deny a specific review bit.
  *
  * Rules (from Ariane's Slack handler logic — design doc §8.6):
- * 1. Must have at least 'reviewer' role
- * 2. If owner_approval_disallowed, launch owners cannot self-approve
- * 3. If access_restricted, only designated reviewers can act
+ * 1. If owner_approval_disallowed, launch owners cannot self-approve
+ * 2. If access_restricted + reviewer_emails populated, user email must be in list
+ * 3. If access_restricted + specific reviewer assigned, only that reviewer can act
  */
 export function canReview(
   user: User,
   review: LaunchReview,
   launchOwnerIds: string[],
+  reviewerEmails: string[] = [],
 ): boolean {
   // Ariane: owner_approval_disallowed check (design doc line 995)
   if (review.owner_approval_disallowed && launchOwnerIds.includes(user.id)) {
@@ -106,10 +107,17 @@ export function canReview(
   }
 
   // Ariane: access_restricted check (design doc line 999)
-  // In MVP: check against reviewer_emails on the review definition
-  // In future: check against Slack channel/group membership
   if (review.access_restricted) {
-    // If there's a specific reviewer assigned and it's not this user, deny
+    // Check 1: If reviewer_emails is populated, user's email must be in the list
+    if (reviewerEmails.length > 0) {
+      const userEmail = user.email.toLowerCase();
+      const allowed = reviewerEmails.map(e => e.toLowerCase());
+      if (!allowed.includes(userEmail)) {
+        return false;
+      }
+    }
+
+    // Check 2: If a specific reviewer is already assigned, only they can act
     if (review.reviewed_by && review.reviewed_by !== user.id) {
       return false;
     }

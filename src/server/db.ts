@@ -248,7 +248,9 @@ export async function getReviewsForLaunch(launchId: string): Promise<LaunchRevie
       *,
       review_definitions!inner (
         label,
-        review_type
+        review_type,
+        reviewer_emails,
+        reviewer_slack_channel
       )
     `)
     .eq('launch_id', launchId);
@@ -265,6 +267,8 @@ export async function getReviewsForLaunch(launchId: string): Promise<LaunchRevie
       ...r,
       label: rd?.label ?? '',
       review_type: rd?.review_type ?? '',
+      reviewer_emails: rd?.reviewer_emails ?? [],
+      reviewer_slack_channel: rd?.reviewer_slack_channel ?? null,
       review_definitions: undefined,
     };
   }) as unknown as LaunchReview[];
