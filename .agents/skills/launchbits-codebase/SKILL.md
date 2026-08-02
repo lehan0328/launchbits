@@ -91,6 +91,8 @@ All writes go through Server Actions. Each action: authenticates → validates �
 | `createLaunchAction(formData)` | Create launch form "Save Draft" |
 | `updateLaunchAction(launchId, formData)` | Edit launch form "Save Changes" |
 | `submitForReviewAction(launchId, formData)` | Create form "Request Review" |
+| `approveReviewAction(reviewId, notes)` | Approve button on review bit. Checks `canReview()` with `reviewer_emails`. |
+| `denyReviewAction(reviewId, notes)` | Request Changes button on review bit. Requires notes. |
 | `signOutAction()` | TopBar avatar click |
 
 ### Adding a New Query
@@ -170,6 +172,7 @@ src/
 ├── components/                  # Shared UI components
 │   ├── DataTable.tsx
 │   ├── LaunchForm.tsx
+│   ├── LoadingSkeleton.tsx     # Reusable skeleton components (TableSkeleton, etc.)
 │   ├── Sidebar.tsx
 │   ├── TopBar.tsx
 │   └── columns.tsx             # Column definitions ('use client')
@@ -238,7 +241,7 @@ These modules contain zero I/O — pure functions for computation and configurat
 | [questionnaire.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/questionnaire.ts) | Questionnaire section/question config | `QUESTIONNAIRE_SECTIONS`, `isSectionVisible()` |
 | [risk-calculator.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/risk-calculator.ts) | Risk level from questionnaire answers | `calculateRiskLevel(formData)` → `'LOW'` / `'MEDIUM'` / `'HIGH'` |
 | [rules-engine.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/rules-engine.ts) | Policy rules → required reviews | `evaluateRequiredReviews(form, risk, defs, rules)` |
-| [permissions.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/permissions.ts) | RBAC permission checks | **Not yet wired to UI** |
+| [permissions.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/permissions.ts) | RBAC permission checks | `canReview()` enforces `reviewer_emails` (case-insensitive). Wired in `actions.ts`. |
 | [state-machine.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/state-machine.ts) | Launch status FSM transitions | **Not yet wired to server actions** |
 | [utils.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/utils.ts) | Formatting, label helpers, status mappers | `statusLabel()`, `formatDate()`, `relativeTime()` |
 | [labels.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/labels.ts) | Display label maps | `DATA_LABELS`, `PURPOSE_LABELS`, `mapLabels()` |
@@ -260,7 +263,7 @@ These modules contain zero I/O — pure functions for computation and configurat
 ## 6 · Styling Layer (Vanilla CSS)
 
 ### Single File
-All styles live in [globals.css](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/globals.css) (~2,350 lines), organized by section comments.
+All styles live in [globals.css](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/globals.css) (~2,700 lines), organized by section comments.
 
 ### Design Tokens (`:root`)
 ```css
