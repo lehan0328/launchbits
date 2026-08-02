@@ -45,6 +45,11 @@ export async function getCurrentUser(): Promise<User | null> {
   // For MVP (single-tenant), assign to the first organization found.
   const admin = createAdminClient();
 
+  if (!admin) {
+    console.warn('[auth] Admin client unavailable — cannot auto-provision user:', authUser.email);
+    return null;
+  }
+
   const { data: orgData } = await admin
     .from('organizations')
     .select('id')

@@ -20,9 +20,10 @@ export function createAdminClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceKey) {
-    throw new Error(
-      'Missing SUPABASE_SERVICE_ROLE_KEY. Add it to .env.local and Vercel env vars.'
+    console.error(
+      '[admin] Missing SUPABASE_SERVICE_ROLE_KEY. Add it to .env.local and Vercel env vars.'
     );
+    return null;
   }
 
   adminClient = createSupabaseClient(url, serviceKey, {
