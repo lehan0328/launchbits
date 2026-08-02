@@ -453,7 +453,7 @@ function IntegrationsSection({ org }: { org: Organization }) {
               className="btn btn-primary btn-sm"
               style={{ textDecoration: 'none' }}
             >
-              Install App
+              Connect
             </a>
           )}
         </div>
@@ -465,7 +465,7 @@ function IntegrationsSection({ org }: { org: Organization }) {
             <div className="ar-integration-name">Email (Resend)</div>
             <div className="ar-integration-desc">Fallback notifications for users not on Slack.</div>
           </div>
-          <button className="btn btn-secondary btn-sm" disabled>Configure</button>
+          <button className="btn btn-secondary btn-sm" disabled>Connect</button>
         </div>
       </div>
     </div>
