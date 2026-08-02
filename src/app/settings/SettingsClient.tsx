@@ -61,7 +61,7 @@ export default function SettingsClient({ org, user, reviewDefs }: SettingsClient
         {/* ── Section 3: Policy Rules ── */}
         <div className="ar-section">
           <div className="ar-section-header">
-            <span className="ar-check-icon">📋</span>
+            <span className="ar-check-icon">☰</span>
             <div>
               <div className="ar-section-title">Policy Rules</div>
               <div className="ar-section-subtitle">Rules determine which reviews are triggered based on questionnaire answers and risk level</div>
@@ -293,7 +293,7 @@ function TeamSection({ users }: { users: User[] }) {
   return (
     <div className="ar-section">
       <div className="ar-section-header">
-        <span className="ar-check-icon">👥</span>
+        <span className="ar-check-icon">⊕</span>
         <div>
           <div className="ar-section-title">Team Members</div>
           <div className="ar-section-subtitle">Manage who has access to your organization</div>
@@ -349,7 +349,7 @@ function IntegrationsSection() {
   return (
     <div className="ar-section">
       <div className="ar-section-header">
-        <span className="ar-check-icon">🔗</span>
+        <span className="ar-check-icon">⇌</span>
         <div>
           <div className="ar-section-title">Integrations</div>
           <div className="ar-section-subtitle">Connect external services to automate notifications and enforce policies</div>
