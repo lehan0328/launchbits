@@ -98,14 +98,6 @@ export default function TopBar({ user }: TopBarProps) {
               </div>
             </div>
             <div className="profile-dropdown-divider" />
-            <Link
-              href="/settings"
-              className="profile-dropdown-item"
-              onClick={() => setMenuOpen(false)}
-            >
-              ⚙️ Settings
-            </Link>
-            <div className="profile-dropdown-divider" />
             <form action={signOutAction}>
               <button type="submit" className="profile-dropdown-item profile-dropdown-signout">
                 Sign out
