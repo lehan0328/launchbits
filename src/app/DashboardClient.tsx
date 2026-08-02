@@ -44,7 +44,7 @@ export default function DashboardClient({
       </div>
 
       {/* Section: Owned by you */}
-      <SectionHeader title="Owned by you" count={launches.length} />
+      <SectionHeader title="Owned by you" count={launches.length} viewAllHref="/owned" />
 
       <DataTable
         data={launches}
@@ -55,6 +55,7 @@ export default function DashboardClient({
       <SectionHeader
         title="Pending your approval"
         count={pendingApproval.length}
+        viewAllHref="/reviews"
         className="mt-8"
       />
 
