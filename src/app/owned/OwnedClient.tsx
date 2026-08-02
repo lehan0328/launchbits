@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { DataTable, TableToolbar } from '@/components/DataTable';
 import { getOwnedColumns } from '@/components/columns';
@@ -41,14 +41,16 @@ function getSortValue(launch: Launch, key: string): string | number {
 export default function OwnedClient({ launches }: { launches: Launch[] }) {
   const params = useSearchParams();
   const urlStatus = params.get('status') || 'ALL';
+  const [prevUrlStatus, setPrevUrlStatus] = useState(urlStatus);
   const [statusFilter, setStatusFilter] = useState<string>(urlStatus);
   const [sortField, setSortField] = useState('target_date');
   const [sortAsc, setSortAsc] = useState(false);
 
-  // Sync filter when URL search params change (e.g. sidebar navigation)
-  useEffect(() => {
+  // Adjust state during render when URL param changes (React-recommended pattern)
+  if (urlStatus !== prevUrlStatus) {
+    setPrevUrlStatus(urlStatus);
     setStatusFilter(urlStatus);
-  }, [urlStatus]);
+  }
 
   const filtered = useMemo(() => {
     const base = statusFilter === 'ALL'
