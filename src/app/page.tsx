@@ -1,4 +1,4 @@
-import { getCurrentUser, getLaunches, getPendingReviewsForUser } from '@/lib/db';
+import { getCurrentUser, getLaunches, getPendingReviewsForUser } from '@/server/db';
 import { redirect } from 'next/navigation';
 import type { Launch } from '@/lib/types';
 import DashboardClient from './DashboardClient';

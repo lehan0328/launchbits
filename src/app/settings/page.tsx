@@ -1,4 +1,4 @@
-import { getCurrentUser, getOrganization, getReviewDefinitions } from '@/lib/db';
+import { getCurrentUser, getOrganization, getReviewDefinitions } from '@/server/db';
 import { redirect } from 'next/navigation';
 import SettingsClient from './SettingsClient';
 

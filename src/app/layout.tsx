@@ -3,7 +3,7 @@ import "./globals.css";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import TopBar from "@/components/TopBar";
 import Sidebar from "@/components/Sidebar";
-import { getCurrentUser } from "@/lib/db";
+import { getCurrentUser } from "@/server/db";
 
 export const metadata: Metadata = {
   title: "Launchbits — Launch Governance Platform",

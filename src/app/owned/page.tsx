@@ -1,4 +1,4 @@
-import { getCurrentUser, getLaunches } from '@/lib/db';
+import { getCurrentUser, getLaunches } from '@/server/db';
 import { redirect } from 'next/navigation';
 import OwnedClient from './OwnedClient';
 

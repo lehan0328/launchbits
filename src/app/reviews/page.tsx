@@ -1,4 +1,4 @@
-import { getCurrentUser, getPendingReviewsForUser } from '@/lib/db';
+import { getCurrentUser, getPendingReviewsForUser } from '@/server/db';
 import { redirect } from 'next/navigation';
 import ReviewsClient from './ReviewsClient';
 

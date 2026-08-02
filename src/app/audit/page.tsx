@@ -1,4 +1,4 @@
-import { getCurrentUser, getAllEvents, getLaunches } from '@/lib/db';
+import { getCurrentUser, getAllEvents, getLaunches } from '@/server/db';
 import { redirect } from 'next/navigation';
 import AuditLogClient from './AuditLogClient';
 

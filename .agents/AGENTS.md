@@ -1,9 +1,12 @@
 # Launchbits — Project Rules
 
 ## Architecture
-- **Layout**: The app shell (Sidebar, TopBar, `app-layout` wrapper) lives in `layout.tsx`. Pages must NOT include `<Sidebar />` or the `app-layout` div — they render only their content inside `<div className="app-content">`.
-- **Contexts**: React contexts go in `src/contexts/`, not `src/lib/`. `lib/` is for pure logic only.
-- **Components**: Reusable UI components go in `src/components/`. Page-specific sub-components stay in their page file as named functions (not default exports).
+- **`src/server/`**: Server-only code (db.ts, supabase clients). Never import from client components.
+- **`src/lib/`**: Shared pure logic (types, utils, business rules). No I/O, works everywhere.
+- **`src/components/`**: Reusable UI components + column definitions. All `'use client'`.
+- **`src/contexts/`**: React contexts.
+- **`src/app/`**: Next.js routes. Layout renders the shell; pages render inside `<div className="app-content">`.
+- Page-specific sub-components stay in their page folder as `*Client.tsx`.
 
 ## TypeScript
 - **No `as any`**. Ever. If you need a type assertion, create a proper type in `types.ts`. Exception: the admin client (`supabase/admin.ts`) uses `as any` because the untyped `@supabase/supabase-js` client returns `never` for table operations.
@@ -20,7 +23,7 @@
 
 ## Data & Labels
 - Display label maps go in `src/lib/labels.ts`, not inline in components.
-- Table column definitions go in `src/lib/columns.tsx`, not duplicated per page.
+- Table column definitions go in `src/components/columns.tsx` (it's `'use client'`).
 - Status → CSS class mappings use `statusTextClass()` from `DataTable.tsx`.
 
 ## Next.js

@@ -1,7 +1,7 @@
 'use client';
 
 import { DataTable } from '@/components/DataTable';
-import { getOwnedColumns } from '@/lib/columns';
+import { getOwnedColumns } from '@/components/columns';
 import type { Launch } from '@/lib/types';
 
 export default function OwnedClient({ launches }: { launches: Launch[] }) {

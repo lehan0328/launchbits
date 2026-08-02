@@ -1,7 +1,7 @@
 'use client';
 
 import { DataTable } from '@/components/DataTable';
-import { getReviewColumns } from '@/lib/columns';
+import { getReviewColumns } from '@/components/columns';
 import type { ReviewWithLaunch } from '@/lib/types';
 
 export default function ReviewsClient({

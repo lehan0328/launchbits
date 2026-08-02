@@ -1,4 +1,4 @@
-import { getCurrentUser, getLaunchById, getReviewsForLaunch, getEventsForLaunch } from '@/lib/db';
+import { getCurrentUser, getLaunchById, getReviewsForLaunch, getEventsForLaunch } from '@/server/db';
 import { redirect } from 'next/navigation';
 import LaunchDetailClient from './LaunchDetailClient';
 

@@ -10,13 +10,13 @@
 //   • User context flows from auth, not hardcoded IDs
 // ============================================================================
 
-import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/server/supabase';
+import { createAdminClient } from '@/server/admin';
 import type {
   Organization, User, Launch, LaunchReview,
   LaunchEvent, ReviewDefinition, ReviewWithLaunch,
   LaunchFormData,
-} from './types';
+} from '@/lib/types';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

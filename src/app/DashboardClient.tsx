@@ -4,7 +4,7 @@ import {
   DataTable,
   SectionHeader,
 } from '@/components/DataTable';
-import { getOwnedColumns, getPendingColumns } from '@/lib/columns';
+import { getOwnedColumns, getPendingColumns } from '@/components/columns';
 import type { Launch } from '@/lib/types';
 
 export default function DashboardClient({

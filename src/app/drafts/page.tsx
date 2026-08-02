@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/db';
+import { getCurrentUser } from '@/server/db';
 import { redirect } from 'next/navigation';
 
 export default async function DraftsPage() {

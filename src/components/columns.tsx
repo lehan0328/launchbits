@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ColumnDef, statusTextClass } from '@/components/DataTable';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase-client';
 import type { Launch, LaunchReview, ReviewWithLaunch } from '@/lib/types';
 import {
   statusLabel, formatDate, relativeTime,

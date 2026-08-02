@@ -1,4 +1,4 @@
-import { getCurrentUser, getReviewDefinitions } from '@/lib/db';
+import { getCurrentUser, getReviewDefinitions } from '@/server/db';
 import { redirect } from 'next/navigation';
 import NewLaunchClient from './NewLaunchClient';
 
