@@ -5,6 +5,7 @@ import TopBar from "@/components/TopBar";
 import Sidebar from "@/components/Sidebar";
 import { getCurrentUser } from "@/server/db";
 import { headers } from "next/headers";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Launchbits — Launch Governance Platform",
@@ -51,6 +52,7 @@ export default async function RootLayout({
           // No shell for unauthenticated pages or shell-excluded paths
           children
         )}
+        <Analytics />
       </body>
     </html>
   );
