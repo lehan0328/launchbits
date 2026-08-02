@@ -18,7 +18,6 @@ description: >
 - **Key tables**: `organizations`, `users`, `launches`, `launch_owners`, `launch_reviews`, `launch_events`, `review_definitions`, `launch_subscriptions`, `slack_messages`
 - **Enums**: `launch_status` (DRAFT → IN_REVIEW → APPROVED → LAUNCHED → ...), `review_status` (PENDING_REVIEW, APPROVED, FYI, ...)
 
-### Environment
 ```bash
 # .env.local (gitignored)
 NEXT_PUBLIC_SUPABASE_URL=https://bfjkiwwbivyxonsosxxd.supabase.co
@@ -37,6 +36,12 @@ ENCRYPTION_KEY=64-char-hex-string
 
 # App URL for Slack message links
 NEXT_PUBLIC_APP_URL=https://www.launchbits.dev
+
+# GitHub App Integration
+GITHUB_APP_ID=your-github-app-id
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+GITHUB_WEBHOOK_SECRET=your-webhook-secret
+NEXT_PUBLIC_GITHUB_APP_SLUG=launchbits
 ```
 
 ---
@@ -204,13 +209,15 @@ src/
 │   ├── supabase.ts              # Server Supabase client
 │   ├── admin.ts                 # Admin client (bypasses RLS)
 │   ├── crypto.ts                # AES-256-GCM encrypt/decrypt for PII
-│   └── slack-notifications.ts   # Slack notification orchestration
+│   ├── slack-notifications.ts   # Slack notification orchestration
+│   └── github-checks.ts         # GitHub Check Runs orchestration
 ├── middleware.ts
 └── lib/                         # Shared pure logic (no I/O)
     ├── types.ts
     ├── utils.ts
     ├── labels.ts
     ├── slack.ts                 # Slack Web API client (pure fetch, no SDK)
+    ├── github.ts                # GitHub API client (JWT auth, Check Runs, webhook sig)
     ├── supabase-client.ts       # Browser Supabase client
     └── ... (business logic modules)
 ```
@@ -393,3 +400,46 @@ User clicks "Connect" in Settings
 - **Signature validation**: All incoming Slack requests are verified with `verifySlackSignature()` (HMAC-SHA256).
 - **Admin client**: Slack notification functions use `createAdminClient()` (bypasses RLS) since they run outside user context.
 - **Untyped tables**: `slack_messages` is not in Supabase generated types — use `as any` cast on `.from()` calls.
+
+---
+
+## 8 · GitHub Integration Layer (PR Gate)
+
+### Architecture
+```
+User clicks "Connect" in Settings
+    → Redirected to github.com/apps/launchbits/installations/new
+    → User installs app on their repos
+    → GitHub redirects to /api/github/install with installation_id
+    → Stored on org row → check runs fire on submit/approve/deny
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| [lib/github.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/github.ts) | Pure fetch GitHub API client. JWT auth, Check Runs create/update, webhook signature verification. |
+| [server/github-checks.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/server/github-checks.ts) | Orchestration: aggregates review status → creates/updates check run on PR. |
+| [api/github/webhook/route.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/api/github/webhook/route.ts) | Webhook handler for `pull_request`, `check_suite`, `installation` events. |
+| [api/github/install/route.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/api/github/install/route.ts) | Installation callback: stores `github_app_installation_id` on org. |
+
+### Check Run Logic
+| Review State | Check Conclusion |
+|-------------|------------------|
+| All approved (excluding FYI) | ✅ `success` — PR can merge |
+| Any denied/changes_requested | ❌ `failure` — PR blocked |
+| Still pending | ⏳ `in_progress` — PR waiting |
+
+### Auth Flow (GitHub App JWT)
+```
+1. Generate short-lived JWT (RS256, 10 min) from App ID + Private Key
+2. Exchange JWT for installation-scoped access token (1 hour)
+3. Use installation token for Check Runs API calls
+```
+
+### Rules
+- **No Octokit SDK** — all calls use native `fetch()` against `https://api.github.com/`
+- **Fire-and-forget**: `syncCheckRun()` calls use `void` prefix so they don't block server actions.
+- **Webhook verification**: All incoming GitHub webhooks are verified with HMAC-SHA256 (`x-hub-signature-256`).
+- **Admin client**: GitHub check functions use `createAdminClient()` (bypasses RLS) since they run outside user context.
+- **Private key format**: PEM stored in env var with `\n` escapes; code does `.replace(/\\n/g, '\n')` at runtime.
+- **Untyped columns**: `github_app_installation_id`, `github_repo`, `github_pr_number` are not in Supabase generated types — use `as any` cast.
