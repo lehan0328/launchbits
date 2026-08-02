@@ -15,8 +15,34 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ] as const;
 
+const SORT_OPTIONS = [
+  { value: 'target_date', label: 'Launch Date' },
+  { value: 'updated_at', label: 'Last Updated' },
+  { value: 'name', label: 'Name' },
+  { value: 'status', label: 'Status' },
+  { value: 'risk_level', label: 'Risk Level' },
+];
+
+function getSortValue(launch: Launch, key: string): string | number {
+  switch (key) {
+    case 'target_date':
+      return new Date(launch.target_date || launch.updated_at).getTime();
+    case 'updated_at':
+      return new Date(launch.updated_at).getTime();
+    case 'name':
+      return launch.name.toLowerCase();
+    case 'status':
+      return launch.status;
+    case 'risk_level':
+      return launch.risk_level;
+    default:
+      return 0;
+  }
+}
+
 export default function OwnedClient({ launches }: { launches: Launch[] }) {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [sortField, setSortField] = useState('target_date');
   const [sortAsc, setSortAsc] = useState(false);
 
   const filtered = useMemo(() => {
@@ -25,16 +51,19 @@ export default function OwnedClient({ launches }: { launches: Launch[] }) {
       : launches.filter(l => l.status === statusFilter);
 
     return [...base].sort((a, b) => {
-      const da = new Date(a.target_date || a.updated_at).getTime();
-      const db = new Date(b.target_date || b.updated_at).getTime();
-      return sortAsc ? da - db : db - da;
+      const va = getSortValue(a, sortField);
+      const vb = getSortValue(b, sortField);
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return sortAsc ? cmp : -cmp;
     });
-  }, [launches, statusFilter, sortAsc]);
+  }, [launches, statusFilter, sortField, sortAsc]);
 
   return (
     <div className="app-content">
       <TableToolbar
-        sortLabel="Launch Date"
+        sortOptions={SORT_OPTIONS}
+        sortValue={sortField}
+        onSortChange={setSortField}
         sortAsc={sortAsc}
         onToggleSort={() => setSortAsc(prev => !prev)}
         actions={

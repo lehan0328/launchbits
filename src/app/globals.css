@@ -1615,6 +1615,37 @@ a:hover { color: var(--link-color-hover); }
   background: var(--color-primary-container);
 }
 
+.sort-dropdown-select {
+  padding: 8px 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  -webkit-appearance: none;
+  appearance: none;
+  /* Add ▾ indicator via background image */
+  padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%234F46E5'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
+
+.sort-dropdown-select:hover {
+  background-color: var(--color-primary-container);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%234F46E5'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
+
+.sort-dropdown-select:focus {
+  outline: none;
+  background-color: var(--color-primary-container);
+}
+
 .sort-direction {
   display: inline-flex;
   align-items: center;

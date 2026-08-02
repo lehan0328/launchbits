@@ -5,25 +5,48 @@ import { DataTable, TableToolbar } from '@/components/DataTable';
 import { getReviewColumns } from '@/components/columns';
 import type { ReviewWithLaunch } from '@/lib/types';
 
+const SORT_OPTIONS = [
+  { value: 'slo_due_at', label: 'SLO Due Date' },
+  { value: 'slo_started_at', label: 'Date Requested' },
+  { value: 'label', label: 'Review Type' },
+];
+
+function getSortValue(r: ReviewWithLaunch, key: string): string | number {
+  switch (key) {
+    case 'slo_due_at':
+      return new Date(r.slo_due_at || '9999').getTime();
+    case 'slo_started_at':
+      return new Date(r.slo_started_at || '0').getTime();
+    case 'label':
+      return (r.label || '').toLowerCase();
+    default:
+      return 0;
+  }
+}
+
 export default function ReviewsClient({
   pendingReviews,
 }: {
   pendingReviews: ReviewWithLaunch[];
 }) {
-  const [sortAsc, setSortAsc] = useState(false);
+  const [sortField, setSortField] = useState('slo_due_at');
+  const [sortAsc, setSortAsc] = useState(true);
 
   const sorted = useMemo(() => {
     return [...pendingReviews].sort((a, b) => {
-      const da = new Date(a.slo_started_at || '0').getTime();
-      const db = new Date(b.slo_started_at || '0').getTime();
-      return sortAsc ? da - db : db - da;
+      const va = getSortValue(a, sortField);
+      const vb = getSortValue(b, sortField);
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return sortAsc ? cmp : -cmp;
     });
-  }, [pendingReviews, sortAsc]);
+  }, [pendingReviews, sortField, sortAsc]);
 
   return (
     <div className="app-content">
       <TableToolbar
-        sortLabel="Date Requested"
+        sortOptions={SORT_OPTIONS}
+        sortValue={sortField}
+        onSortChange={setSortField}
         sortAsc={sortAsc}
         onToggleSort={() => setSortAsc(prev => !prev)}
       />

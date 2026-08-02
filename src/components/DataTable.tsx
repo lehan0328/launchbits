@@ -24,9 +24,17 @@ export interface ColumnDef<T> {
 // Table toolbar (sort + export)
 // ============================================================================
 
+export interface SortOption {
+  value: string;
+  label: string;
+}
+
 interface TableToolbarProps {
-  /** Label for the sort dropdown, e.g. "Launch Date" */
+  /** Static label (backward compat) OR array of sort options */
   sortLabel?: string;
+  sortOptions?: SortOption[];
+  sortValue?: string;
+  onSortChange?: (value: string) => void;
   sortAsc: boolean;
   onToggleSort: () => void;
   /** Additional actions on the right side */
@@ -35,6 +43,9 @@ interface TableToolbarProps {
 
 export function TableToolbar({
   sortLabel = 'Launch Date',
+  sortOptions,
+  sortValue,
+  onSortChange,
   sortAsc,
   onToggleSort,
   actions,
@@ -42,10 +53,22 @@ export function TableToolbar({
   return (
     <div className="table-toolbar">
       <div className="table-toolbar-left">
-        <button className="sort-dropdown">
-          <span className="sort-icon">≡</span>
-          {sortLabel} ▾
-        </button>
+        <span className="sort-icon">≡</span>
+        {sortOptions && onSortChange ? (
+          <select
+            className="sort-dropdown-select"
+            value={sortValue}
+            onChange={e => onSortChange(e.target.value)}
+          >
+            {sortOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        ) : (
+          <button className="sort-dropdown">
+            {sortLabel} ▾
+          </button>
+        )}
         <button
           className="sort-direction"
           onClick={onToggleSort}
