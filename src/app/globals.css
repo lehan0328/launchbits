@@ -148,17 +148,7 @@ body {
 a { color: var(--link-color); text-decoration: none; }
 a:hover { color: var(--link-color-hover); }
 
-/* --- Utility Classes --- */
-.flex { display: flex; }
-.items-center { align-items: center; }
-.gap-1 { gap: 4px; }
-.mt-4 { margin-top: 16px; }
-.text-sm { font-size: 14px; }
-.text-xs { font-size: 12px; }
-.text-secondary { color: #5f6368; }
-.text-muted { color: #80868b; }
-.font-medium { font-weight: 500; }
-.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 
 /* --- Launch Detail Page (Ariane-inspired) --- */
 
@@ -733,10 +723,7 @@ a:hover { color: var(--link-color-hover); }
   background: var(--bg-surface-secondary);
 }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+
 
 /* Form / New Launch */
 .app-header-title {
@@ -823,6 +810,7 @@ a:hover { color: var(--link-color-hover); }
   flex-shrink: 0;
   min-width: 180px;
   justify-content: flex-end;
+  position: relative;
 }
 
 .topbar-avatar {
@@ -841,9 +829,7 @@ a:hover { color: var(--link-color-hover); }
   border: none;
 }
 
-.topbar-right {
-  position: relative;
-}
+
 
 /* Profile Dropdown */
 .profile-dropdown {
@@ -1542,55 +1528,7 @@ a:hover { color: var(--link-color-hover); }
   color: var(--color-red);
 }
 
-/* Reviews completed column (progress bar inline) */
-.reviews-cell {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
 
-.reviews-count {
-  font-size: 14px;
-  color: #5f6368;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.reviews-bar {
-  width: 100px;
-  height: 4px;
-  background: #e8eaed;
-  border-radius: 2px;
-  overflow: hidden;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.reviews-bar-fill {
-  height: 100%;
-  background: #0d652d;
-  border-radius: 2px;
-  transition: width 300ms ease;
-}
-
-.reviews-bar-fill--done {
-  background: var(--color-green-600);
-}
-
-/* Todo badge (Ariane "▶ 10 to-dos") */
-.todo-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #7a5a00;
-  background: #fef7cd;
-  border: 1px solid #fde68a;
-  border-radius: 12px;
-  white-space: nowrap;
-}
 
 /* Sort toolbar above table */
 .table-toolbar {
@@ -1718,26 +1656,7 @@ a:hover { color: var(--link-color-hover); }
   border-top: 1px solid #e8eaed;
 }
 
-/* --- Table Toolbar (Sort + Export) --- */
-.table-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-2) var(--sp-1);
-  height: 40px;
-}
 
-.table-toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
-.table-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-}
 
 /* --- Search Input (Pill-shaped search bar) --- */
 .search-input {
@@ -1958,6 +1877,7 @@ a:hover { color: var(--link-color-hover); }
 .text-sm { font-size: 12px; }
 .font-medium { font-weight: 500; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.text-muted { color: var(--text-tertiary); }
 
 /* --- Transitions (fast, functional, no bounce) --- */
 .fade-in {
@@ -2972,12 +2892,6 @@ a:hover { color: var(--link-color-hover); }
 
 /* ====== TOOLBAR FILTER (dropdown inside TableToolbar) ====== */
 
-.toolbar-filter-group {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
 .toolbar-filter-select {
   padding: 5px 10px;
   font-size: 14px;
@@ -2998,5 +2912,3 @@ a:hover { color: var(--link-color-hover); }
   outline: none;
   background: var(--color-primary-container);
 }
-
-
