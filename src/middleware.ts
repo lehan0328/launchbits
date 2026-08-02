@@ -43,7 +43,8 @@ export async function middleware(request: NextRequest) {
   // Protect routes: redirect unauthenticated users to /login
   const isAuthRoute =
     request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/auth');
+    request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname.startsWith('/setup');
 
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone();

@@ -19,19 +19,67 @@ import type {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Get the authenticated user's app-level profile from the users table. */
+/**
+ * Get the authenticated user's app-level profile from the users table.
+ * If the user is authenticated via Supabase Auth but has no users table entry,
+ * auto-provisions a new user record (Phase 2B: first-login provisioning).
+ */
 export async function getCurrentUser(): Promise<User | null> {
   const supabase = await createClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
-  if (!authUser) return null;
+  if (!authUser || !authUser.email) return null;
 
-  const { data } = await supabase
+  // Try to find existing user profile
+  const { data: existingUser } = await supabase
     .from('users')
     .select('*')
     .eq('email', authUser.email)
     .single();
 
-  return data as User | null;
+  if (existingUser) return existingUser as User;
+
+  // ── Auto-provision: create user on first login ──────────────────────────
+  // For MVP (single-tenant), assign to the first organization found.
+  // Future: prompt for org invite code or org creation via /setup page.
+  const { data: defaultOrg } = await supabase
+    .from('organizations')
+    .select('id')
+    .limit(1)
+    .single();
+
+  if (!defaultOrg) {
+    // No org exists — user cannot be provisioned yet
+    console.warn('[auth] No organization found for auto-provisioning user:', authUser.email);
+    return null;
+  }
+
+  // Derive display name from auth metadata or email
+  const displayName =
+    authUser.user_metadata?.full_name ||
+    authUser.user_metadata?.name ||
+    authUser.email.split('@')[0];
+
+  const avatarUrl = authUser.user_metadata?.avatar_url || null;
+
+  const { data: newUser, error } = await supabase
+    .from('users')
+    .insert({
+      org_id: defaultOrg.id,
+      email: authUser.email,
+      display_name: displayName,
+      avatar_url: avatarUrl,
+      role: 'member',
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    console.error('[auth] Failed to auto-provision user:', error);
+    return null;
+  }
+
+  console.log('[auth] Auto-provisioned new user:', newUser?.email);
+  return newUser as User;
 }
 
 /** Get user by ID. */
