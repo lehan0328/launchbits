@@ -349,7 +349,7 @@ function IntegrationsSection({ org }: { org: Organization }) {
   const slackConnected = !!org.slack_bot_token_encrypted;
 
   const slackClientId = process.env.NEXT_PUBLIC_SLACK_CLIENT_ID;
-  const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.launchbits.dev';
   const slackOauthUrl = `https://slack.com/oauth/v2/authorize?client_id=${slackClientId}&scope=chat:write,chat:write.public,users:read,users:read.email&redirect_uri=${encodeURIComponent(`${appUrl}/api/slack/oauth`)}`;
 
   const handleDisconnect = () => {
