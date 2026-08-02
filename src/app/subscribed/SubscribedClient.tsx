@@ -6,20 +6,17 @@ import { getOwnedColumns } from '@/components/columns';
 import type { Launch } from '@/lib/types';
 
 const SORT_OPTIONS = [
+  { value: 'display_id', label: 'ID' },
   { value: 'target_date', label: 'Launch Date' },
-  { value: 'updated_at', label: 'Last Updated' },
-  { value: 'name', label: 'Name' },
   { value: 'status', label: 'Status' },
 ];
 
 function getSortValue(launch: Launch, key: string): string | number {
   switch (key) {
+    case 'display_id':
+      return launch.display_id;
     case 'target_date':
       return new Date(launch.target_date || launch.updated_at).getTime();
-    case 'updated_at':
-      return new Date(launch.updated_at).getTime();
-    case 'name':
-      return launch.name.toLowerCase();
     case 'status':
       return launch.status;
     default:

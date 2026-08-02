@@ -6,19 +6,22 @@ import { getReviewColumns } from '@/components/columns';
 import type { ReviewWithLaunch } from '@/lib/types';
 
 const SORT_OPTIONS = [
+  { value: 'display_id', label: 'ID' },
+  { value: 'status', label: 'Review Status' },
+  { value: 'target_date', label: 'Target Date' },
   { value: 'slo_due_at', label: 'SLO Due Date' },
-  { value: 'slo_started_at', label: 'Date Requested' },
-  { value: 'label', label: 'Review Type' },
 ];
 
 function getSortValue(r: ReviewWithLaunch, key: string): string | number {
   switch (key) {
+    case 'display_id':
+      return r.launch?.display_id ?? 0;
+    case 'status':
+      return r.status;
+    case 'target_date':
+      return new Date(r.launch?.target_date || r.launch?.updated_at || '0').getTime();
     case 'slo_due_at':
       return new Date(r.slo_due_at || '9999').getTime();
-    case 'slo_started_at':
-      return new Date(r.slo_started_at || '0').getTime();
-    case 'label':
-      return (r.label || '').toLowerCase();
     default:
       return 0;
   }

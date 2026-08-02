@@ -16,25 +16,22 @@ const STATUS_OPTIONS = [
 ] as const;
 
 const SORT_OPTIONS = [
+  { value: 'display_id', label: 'ID' },
+  { value: 'risk_level', label: 'Stage' },
   { value: 'target_date', label: 'Launch Date' },
-  { value: 'updated_at', label: 'Last Updated' },
-  { value: 'name', label: 'Name' },
   { value: 'status', label: 'Status' },
-  { value: 'risk_level', label: 'Risk Level' },
 ];
 
 function getSortValue(launch: Launch, key: string): string | number {
   switch (key) {
-    case 'target_date':
-      return new Date(launch.target_date || launch.updated_at).getTime();
-    case 'updated_at':
-      return new Date(launch.updated_at).getTime();
-    case 'name':
-      return launch.name.toLowerCase();
-    case 'status':
-      return launch.status;
+    case 'display_id':
+      return launch.display_id;
     case 'risk_level':
       return launch.risk_level;
+    case 'target_date':
+      return new Date(launch.target_date || launch.updated_at).getTime();
+    case 'status':
+      return launch.status;
     default:
       return 0;
   }
