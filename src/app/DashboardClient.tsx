@@ -26,17 +26,17 @@ export default function DashboardClient({
     <div className="app-content">
       {/* Summary stat cards */}
       <div className="dashboard-stats">
-        <div className="card stat-card">
+        <div className="stat-card stat-card--indigo">
           <div className="stat-card-label">Active Launches</div>
           <div className="stat-card-value">{stats.activeLaunches}</div>
           <div className="stat-card-detail">In review or approved</div>
         </div>
-        <div className="card stat-card">
+        <div className="stat-card stat-card--amber">
           <div className="stat-card-label">Pending Reviews</div>
           <div className="stat-card-value">{stats.pendingReviews}</div>
           <div className="stat-card-detail">Awaiting your approval</div>
         </div>
-        <div className="card stat-card">
+        <div className="stat-card stat-card--green">
           <div className="stat-card-label">Recently Approved</div>
           <div className="stat-card-value">{stats.recentlyApproved}</div>
           <div className="stat-card-detail">Last 7 days</div>

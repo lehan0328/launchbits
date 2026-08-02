@@ -2474,6 +2474,20 @@ a:hover { color: var(--link-color-hover); }
 
 .stat-card {
   padding: var(--sp-4) var(--sp-5);
+  border: none;
+  border-radius: var(--radius-lg);
+}
+
+.stat-card--indigo {
+  background: rgba(79, 70, 229, 0.06);
+}
+
+.stat-card--amber {
+  background: rgba(249, 171, 0, 0.08);
+}
+
+.stat-card--green {
+  background: rgba(30, 142, 62, 0.06);
 }
 
 .stat-card-label {
