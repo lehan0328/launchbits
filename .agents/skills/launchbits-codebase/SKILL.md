@@ -14,6 +14,8 @@ description: >
 
 ### Schema
 - **Source of truth**: [schema.sql](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/db/schema.sql) — run in Supabase SQL Editor
+- **RLS policies**: [rls_policies.sql](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/db/rls_policies.sql) — org-scoped RLS on all 8 tables
+- **Helper function**: `public.user_org_id()` — SECURITY DEFINER function that returns the current user's org_id
 - **Seed data**: [seed.sql](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/db/seed.sql) — demo org, 4 users, 4 launches, 7 reviews, 4 events
 - **Key tables**: `organizations`, `users`, `launches`, `launch_owners`, `launch_reviews`, `launch_events`, `review_definitions`
 - **Enums**: `launch_status` (DRAFT → IN_REVIEW → APPROVED → LAUNCHED → ...), `review_status` (PENDING_REVIEW, APPROVED, FYI, ...)
@@ -21,14 +23,10 @@ description: >
 ### Environment
 ```bash
 # .env.local (gitignored)
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://bfjkiwwbivyxonsosxxd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # server-only, bypasses RLS
 ```
-
-### Phase 2 TODO
-- Row Level Security (RLS) on all tables
-- Database functions for complex transactions
-- Supabase real-time subscriptions for live updates
 
 ---
 
@@ -52,13 +50,10 @@ User → /login → Google OAuth or Magic Link
 | [layout.tsx](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/app/layout.tsx) | Auth-aware root layout: renders app shell only if user is authenticated |
 
 ### Rules
-- Protected routes: everything except `/login` and `/auth/*`
+- Protected routes: everything except `/login`, `/auth/*`, and `/setup`
 - User identity: `getCurrentUser()` in `db.ts` matches `auth.email` → `users.email`
+- **Auto-provisioning**: If auth user exists but no `users` row, `getCurrentUser()` auto-creates the user using the admin client (bypasses RLS)
 - Sign out: `signOutAction()` Server Action in `actions.ts`
-
-### Phase 2 TODO
-- Role-based permission enforcement in UI
-- User provisioning on first login (auto-create user record)
 
 ---
 
@@ -67,8 +62,9 @@ User → /login → Google OAuth or Magic Link
 ### Supabase Clients
 | File | Context | Usage |
 |------|---------|-------|
-| [supabase/server.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase/server.ts) | Server Components, Server Actions, Route Handlers | Cookie-based session via `cookies()` |
+| [supabase/server.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase/server.ts) | Server Components, Server Actions, Route Handlers | Cookie-based session via `cookies()`. Subject to RLS. |
 | [supabase/client.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase/client.ts) | Client Components (rare) | Browser-side, used only for ReviewsCell |
+| [supabase/admin.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/supabase/admin.ts) | Server-only admin operations | Uses `SUPABASE_SERVICE_ROLE_KEY`, **bypasses RLS**. Only for user auto-provisioning. |
 
 ### Data Access Layer — [db.ts](file:///Users/lehanouyang/.gemini/antigravity-ide/scratch/launchbits/src/lib/db.ts)
 All reads go through `db.ts`. Functions are async, server-side only:
@@ -121,7 +117,7 @@ All writes go through Server Actions. Each action: authenticates → validates �
 ## 4 · Frontend Layer (Next.js App Router)
 
 ### Architecture Pattern: Server Wrapper + Client Component
-Every page that needs interactivity follows this split:
+**CRITICAL**: Every page that renders `'use client'` components (like column definitions from `columns.tsx`) MUST follow this split. Calling a client function from a Server Component crashes in production (even if it works in dev).
 
 ```
 page.tsx (Server Component — async)
@@ -130,6 +126,7 @@ page.tsx (Server Component — async)
   └── Passes data as props to:
       └── *Client.tsx (Client Component — 'use client')
           ├── Handles state, events, filtering, tabs
+          ├── Calls column definition functions (getOwnedColumns etc.)
           └── Calls Server Actions for mutations
 ```
 
@@ -138,11 +135,20 @@ page.tsx (Server Component — async)
 src/
 ├── app/                         # Next.js App Router
 │   ├── layout.tsx               # Root layout (auth-aware shell)
+│   ├── error.tsx                # Page-level error boundary
+│   ├── global-error.tsx         # Root error boundary
 │   ├── actions.ts               # All Server Actions
 │   ├── globals.css              # All styles
-│   ├── page.tsx                 # Dashboard — server component (no client split)
-│   ├── owned/page.tsx           # Owned — server component
-│   ├── reviews/page.tsx         # Reviews — server component
+│   ├── page.tsx                 # Dashboard — server wrapper
+│   ├── DashboardClient.tsx      # Dashboard — client rendering
+│   ├── owned/
+│   │   ├── page.tsx             # Server wrapper
+│   │   └── OwnedClient.tsx      # Client rendering
+│   ├── reviews/
+│   │   ├── page.tsx             # Server wrapper
+│   │   └── ReviewsClient.tsx    # Client rendering
+│   ├── drafts/page.tsx          # Placeholder (sidebar link)
+│   ├── subscribed/page.tsx      # Placeholder (sidebar link)
 │   ├── audit/
 │   │   ├── page.tsx             # Server wrapper
 │   │   └── AuditLogClient.tsx   # Client (filtering, pagination)
