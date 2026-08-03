@@ -10,8 +10,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyGitHubSignature } from '@/lib/github';
 import { createAdminClient } from '@/server/admin';
 import { syncCheckRun } from '@/server/github-checks';
+import { rateLimitWebhook } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 100 req/min per IP
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+  const { allowed, headers } = rateLimitWebhook(ip, 'github-webhook');
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers });
+  }
+
+
   const body = await request.text();
   const signature = request.headers.get('x-hub-signature-256');
   const event = request.headers.get('x-github-event');

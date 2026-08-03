@@ -4,8 +4,17 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySlackSignature } from '@/lib/slack';
+import { rateLimitWebhook } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 100 req/min per IP
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+  const { allowed, headers } = rateLimitWebhook(ip, 'slack-events');
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers });
+  }
+
+
   const body = await request.text();
   const signingSecret = process.env.SLACK_SIGNING_SECRET;
 

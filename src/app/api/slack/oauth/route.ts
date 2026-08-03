@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/server/admin';
 import { encrypt } from '@/server/crypto';
 import { getCurrentUser } from '@/server/db';
+import { rateLimitAuth } from '@/lib/rate-limit';
 
 interface SlackOAuthResponse {
   ok: boolean;
@@ -16,6 +17,13 @@ interface SlackOAuthResponse {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limit: 10 req/min per IP
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+  const { allowed, headers } = rateLimitAuth(ip);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers });
+  }
+
   const code = request.nextUrl.searchParams.get('code');
   const error = request.nextUrl.searchParams.get('error');
 

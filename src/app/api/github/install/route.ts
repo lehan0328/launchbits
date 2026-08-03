@@ -8,8 +8,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/server/supabase';
+import { rateLimitAuth } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
+  // Rate limit: 10 req/min per IP
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+  const { allowed, headers } = rateLimitAuth(ip);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers });
+  }
+
   const url = new URL(request.url);
   const installationId = url.searchParams.get('installation_id');
   const setupAction = url.searchParams.get('setup_action');

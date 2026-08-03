@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySlackSignature } from '@/lib/slack';
 import { createAdminClient } from '@/server/admin';
 import { notifyReviewCompleted } from '@/server/slack-notifications';
+import { rateLimitInteractivity } from '@/lib/rate-limit';
 import type { Launch } from '@/lib/types';
 
 interface SlackInteractionPayload {
@@ -20,6 +21,13 @@ interface SlackInteractionPayload {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 60 req/min per IP
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+  const { allowed, headers } = rateLimitInteractivity(ip);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers });
+  }
+
   const formBody = await request.text();
   const signingSecret = process.env.SLACK_SIGNING_SECRET;
 
