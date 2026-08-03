@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode, Fragment } from 'react';
+import { useState, memo, ReactNode, Fragment } from 'react';
 import Link from 'next/link';
 
 // ============================================================================
@@ -239,7 +239,7 @@ interface SectionHeaderProps {
   className?: string;
 }
 
-export function SectionHeader({ title, count, viewAllHref = '/', style, className }: SectionHeaderProps) {
+export const SectionHeader = memo(function SectionHeader({ title, count, viewAllHref = '/', style, className }: SectionHeaderProps) {
   return (
     <div className={`section-divider ${className || ''}`} style={style}>
       <div className="section-divider-left">
@@ -249,7 +249,7 @@ export function SectionHeader({ title, count, viewAllHref = '/', style, classNam
       <Link href={viewAllHref} className="section-view-all">View All</Link>
     </div>
   );
-}
+});
 
 // ============================================================================
 // Status text helper (shared across pages)

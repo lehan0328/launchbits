@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useOptimistic } from 'react';
 import Link from 'next/link';
-import type { LaunchReview, Launch, LaunchEvent, User } from '@/lib/types';
+import type { LaunchReview, Launch, LaunchEvent, User, ReviewStatus } from '@/lib/types';
 import {
   statusTagClass, statusLabel, riskDotClass, riskTagClass,
   reviewStatusLabel, formatDate, formatDateTime,
@@ -457,14 +457,21 @@ function ReviewRow({ review, launchId: _launchId, user, launchOwnerId }: { revie
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  // Optimistic UI: immediately show status change before server confirms
+  const [optimisticStatus, setOptimisticStatus] = useOptimistic(
+    review.status,
+    (_current: ReviewStatus, newStatus: ReviewStatus) => newStatus,
+  );
+
   const userCanReview = canReview(user, review, [launchOwnerId], review.reviewer_emails ?? []);
   const userCanFyi = canDowngradeToFyi(user, review, [launchOwnerId]);
-  const isPendingReview = isBlockingReview(review.status);
+  const isPendingReview = isBlockingReview(optimisticStatus);
   const canClaim = isPendingReview && !review.reviewed_by && userCanReview;
 
   function handleApprove() {
     setError(null);
     startTransition(async () => {
+      setOptimisticStatus('APPROVED');
       try {
         await approveReviewAction(review.id, notes);
         setShowActions(false);
@@ -482,6 +489,7 @@ function ReviewRow({ review, launchId: _launchId, user, launchOwnerId }: { revie
     }
     setError(null);
     startTransition(async () => {
+      setOptimisticStatus('NEEDS_WORK');
       try {
         await requestChangesAction(review.id, notes);
         setShowActions(false);
@@ -495,6 +503,7 @@ function ReviewRow({ review, launchId: _launchId, user, launchOwnerId }: { revie
   function handleMarkFyi() {
     setError(null);
     startTransition(async () => {
+      setOptimisticStatus('FYI');
       try {
         await markFyiAction(review.id);
         setShowActions(false);
@@ -511,8 +520,8 @@ function ReviewRow({ review, launchId: _launchId, user, launchOwnerId }: { revie
           <span className="review-name-link">{review.label}</span>
         </td>
         <td>
-          <span className={`review-status-tag ${reviewStatusTagClass(review.status)}`}>
-            {reviewStatusLabel(review.status)}
+          <span className={`review-status-tag ${reviewStatusTagClass(optimisticStatus)}`}>
+            {reviewStatusLabel(optimisticStatus)}
           </span>
         </td>
         <td>
