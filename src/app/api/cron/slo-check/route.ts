@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { createAdminClient } from '@/server/admin';
 import { notifySloWarning } from '@/server/slack-notifications';
 import { emailSloWarning } from '@/server/email-notifications';
@@ -103,6 +104,7 @@ export async function GET(request: NextRequest) {
 
       processed++;
     } catch (err) {
+      Sentry.captureException(err);
       console.error(`[SLO Cron] Failed to process review ${review.id}:`, err);
     }
   }

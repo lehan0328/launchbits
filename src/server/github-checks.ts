@@ -5,6 +5,7 @@
  * to create/update check runs when launch review status changes.
  */
 
+import * as Sentry from '@sentry/nextjs';
 import { createAdminClient } from '@/server/admin';
 import {
   getInstallationToken,
@@ -119,6 +120,7 @@ export async function syncCheckRun(launchId: string): Promise<void> {
 
     console.log(`[GitHub] Check run synced for launch ${launchId}: ${conclusion || status}`);
   } catch (err) {
+    Sentry.captureException(err);
     // Fire-and-forget — don't crash the main action
     console.error('[GitHub] Failed to sync check run:', err);
   }

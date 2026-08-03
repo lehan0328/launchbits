@@ -6,6 +6,7 @@
  * Mirrors slack-notifications.ts in structure.
  */
 
+import * as Sentry from '@sentry/nextjs';
 import { createAdminClient } from '@/server/admin';
 import { decrypt } from '@/server/crypto';
 import {
@@ -56,6 +57,7 @@ export async function emailReviewRequested(
 
     console.log(`[Email] Review request sent to ${reviewerEmails.length} reviewers for ${reviewName}`);
   } catch (err) {
+    Sentry.captureException(err);
     console.error('[Email] Failed to send review request:', err);
   }
 }
@@ -91,6 +93,7 @@ export async function emailReviewCompleted(
 
     console.log(`[Email] Review ${action} email sent to ${ownerEmail} for ${reviewName}`);
   } catch (err) {
+    Sentry.captureException(err);
     console.error('[Email] Failed to send review completion:', err);
   }
 }
@@ -131,6 +134,7 @@ export async function emailSloWarning(
 
     console.log(`[Email] SLO warning sent to ${reviewerEmails.length} reviewers for ${reviewName}`);
   } catch (err) {
+    Sentry.captureException(err);
     console.error('[Email] Failed to send SLO warning:', err);
   }
 }

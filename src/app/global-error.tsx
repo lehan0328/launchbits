@@ -1,5 +1,12 @@
 'use client';
 
+// ============================================================================
+// GLOBAL ERROR HANDLER — Captures unhandled errors and reports to Sentry
+// ============================================================================
+
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
+
 export default function GlobalError({
   error,
   reset,
@@ -7,32 +14,47 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  // Log the full error for debugging
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  // Also log for local debugging
   console.error('[GlobalError]', error.message, error.digest, error.stack);
 
   return (
-    <html>
-      <body style={{ padding: 40, fontFamily: 'system-ui' }}>
-        <h2>Something went wrong</h2>
-        <p style={{ color: '#666' }}>
-          {error.message || 'An unexpected error occurred.'}
+    <html lang="en">
+      <body style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        fontFamily: "'Google Sans', 'Inter', system-ui, sans-serif",
+        color: '#3c4043',
+        background: '#f8f9fa',
+        padding: 40,
+      }}>
+        <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>Something went wrong</h2>
+        <p style={{ color: '#5f6368', marginBottom: '24px' }}>
+          An unexpected error occurred. Our team has been notified.
         </p>
         {error.digest && (
-          <p style={{ color: '#999', fontSize: 12 }}>Digest: {error.digest}</p>
+          <p style={{ color: '#999', fontSize: 12, marginBottom: 16 }}>Digest: {error.digest}</p>
         )}
         <button
           onClick={() => reset()}
           style={{
-            marginTop: 16,
-            padding: '8px 16px',
-            background: '#1a73e8',
+            padding: '10px 24px',
+            backgroundColor: '#4f46e5',
             color: 'white',
             border: 'none',
-            borderRadius: 4,
+            borderRadius: '8px',
             cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 500,
           }}
         >
-          Try again
+          Try Again
         </button>
       </body>
     </html>

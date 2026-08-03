@@ -4,6 +4,7 @@
 // All functions are fire-and-forget safe (they catch errors and log).
 // ============================================================================
 
+import * as Sentry from '@sentry/nextjs';
 import { createAdminClient } from '@/server/admin';
 import { decrypt } from '@/server/crypto';
 import {
@@ -38,6 +39,7 @@ async function getOrgWithToken(orgId: string): Promise<{ token: string } | null>
     const token = decrypt(org.slack_bot_token_encrypted as string);
     return { token };
   } catch (err) {
+    Sentry.captureException(err);
     console.error('Failed to decrypt Slack token for org', orgId, err);
     return null;
   }
@@ -124,6 +126,7 @@ export async function notifyReviewRequested(
       }
     }
   } catch (err) {
+    Sentry.captureException(err);
     console.error('Slack notifyReviewRequested error:', err);
   }
 }
@@ -185,6 +188,7 @@ export async function notifyReviewCompleted(
       );
     }
   } catch (err) {
+    Sentry.captureException(err);
     console.error('Slack notifyReviewCompleted error:', err);
   }
 }
@@ -246,6 +250,7 @@ export async function notifySloWarning(
     await postMessage(token, channel, blocks, `⚠️ SLO Breached: ${reviewName} for ${launchTitle}`);
     console.log(`[Slack] SLO warning posted to ${channel} for ${reviewName}`);
   } catch (err) {
+    Sentry.captureException(err);
     console.error('[Slack] notifySloWarning error:', err);
   }
 }
