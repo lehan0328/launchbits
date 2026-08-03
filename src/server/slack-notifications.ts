@@ -189,3 +189,66 @@ export async function notifyReviewCompleted(
     console.error('Slack notifyReviewCompleted error:', err);
   }
 }
+
+// ── SLO Warning ─────────────────────────────────────────────────────────────
+
+/**
+ * Post an SLO breach warning to the reviewer's Slack channel.
+ */
+export async function notifySloWarning(
+  orgId: string,
+  launchTitle: string,
+  launchId: string,
+  reviewName: string,
+): Promise<void> {
+  try {
+    const supabase = createAdminClient();
+    if (!supabase) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: org } = await (supabase.from('organizations') as any)
+      .select('slack_bot_token_encrypted')
+      .eq('id', orgId)
+      .single();
+
+    if (!org?.slack_bot_token_encrypted) return;
+    const token = decrypt(org.slack_bot_token_encrypted);
+
+    // Find the review's Slack channel from the review definition
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: reviewDef } = await (supabase.from('review_definitions') as any)
+      .select('reviewer_slack_channel')
+      .eq('org_id', orgId)
+      .eq('label', reviewName)
+      .single();
+
+    const channel = reviewDef?.reviewer_slack_channel;
+    if (!channel) return;
+
+    const blocks: SlackBlock[] = [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `⚠️ *SLO Breached* — ${reviewName}\n\nThe review for *${launchTitle}* has exceeded its SLO deadline.`,
+        },
+      },
+      {
+        type: 'actions',
+        elements: [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: '📋 View Launch' },
+            url: `${APP_URL}/launches/${launchId}`,
+            style: 'primary',
+          },
+        ],
+      },
+    ];
+
+    await postMessage(token, channel, blocks, `⚠️ SLO Breached: ${reviewName} for ${launchTitle}`);
+    console.log(`[Slack] SLO warning posted to ${channel} for ${reviewName}`);
+  } catch (err) {
+    console.error('[Slack] notifySloWarning error:', err);
+  }
+}

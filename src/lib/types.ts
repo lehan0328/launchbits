@@ -109,6 +109,8 @@ export interface Organization {
   slack_bot_token_encrypted: string | null;
   slack_team_id: string | null;
   github_app_installation_id: number | null;
+  email_resend_api_key_encrypted: string | null;
+  email_from_address: string | null;
   created_at: string;
 }
 

@@ -380,6 +380,12 @@ function IntegrationsSection({ org }: { org: Organization }) {
   const githubAppSlug = process.env.NEXT_PUBLIC_GITHUB_APP_SLUG || 'launchbits';
   const githubInstallUrl = `https://github.com/apps/${githubAppSlug}/installations/new`;
 
+  // Email
+  const emailConnected = !!org.email_resend_api_key_encrypted;
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailApiKey, setEmailApiKey] = useState('');
+  const [emailFrom, setEmailFrom] = useState(org.email_from_address || '');
+
   const handleDisconnect = () => {
     startTransition(async () => {
       const { disconnectSlackAction } = await import('@/app/actions');
@@ -391,6 +397,23 @@ function IntegrationsSection({ org }: { org: Organization }) {
     startTransition(async () => {
       const { disconnectGitHubAction } = await import('@/app/actions');
       await disconnectGitHubAction();
+    });
+  };
+
+  const handleConnectEmail = () => {
+    if (!emailApiKey || !emailFrom) return;
+    startTransition(async () => {
+      const { connectEmailAction } = await import('@/app/actions');
+      await connectEmailAction(emailApiKey, emailFrom);
+      setShowEmailForm(false);
+      setEmailApiKey('');
+    });
+  };
+
+  const handleDisconnectEmail = () => {
+    startTransition(async () => {
+      const { disconnectEmailAction } = await import('@/app/actions');
+      await disconnectEmailAction();
     });
   };
 
@@ -458,14 +481,67 @@ function IntegrationsSection({ org }: { org: Organization }) {
           )}
         </div>
 
-        {/* Email — not yet implemented */}
-        <div className="ar-integration-row">
+        {/* Email — live */}
+        <div className="ar-integration-row" style={{ flexWrap: 'wrap' }}>
           <span className="ar-integration-icon"><MailLogo /></span>
           <div className="ar-integration-info">
-            <div className="ar-integration-name">Email (Resend)</div>
-            <div className="ar-integration-desc">Fallback notifications for users not on Slack.</div>
+            <div className="ar-integration-name">
+              Email (Resend)
+              {emailConnected && <span className="tag tag-approved" style={{ marginLeft: 8 }}>Connected</span>}
+            </div>
+            <div className="ar-integration-desc">
+              {emailConnected
+                ? `Sending from ${org.email_from_address}`
+                : 'Fallback notifications for users not on Slack.'}
+            </div>
           </div>
-          <button className="btn btn-secondary btn-sm" disabled>Connect</button>
+          {emailConnected ? (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleDisconnectEmail}
+              disabled={isPending}
+            >
+              {isPending ? 'Disconnecting…' : 'Disconnect'}
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setShowEmailForm(!showEmailForm)}
+            >
+              Connect
+            </button>
+          )}
+          {showEmailForm && !emailConnected && (
+            <div style={{ width: '100%', marginTop: 12, paddingLeft: 44 }}>
+              <div className="ar-field" style={{ marginBottom: 8 }}>
+                <label className="ar-label">Resend API Key</label>
+                <input
+                  type="password"
+                  className="ar-input"
+                  placeholder="re_..."
+                  value={emailApiKey}
+                  onChange={(e) => setEmailApiKey(e.target.value)}
+                />
+              </div>
+              <div className="ar-field" style={{ marginBottom: 12 }}>
+                <label className="ar-label">From Address</label>
+                <input
+                  type="email"
+                  className="ar-input"
+                  placeholder="notifications@yourdomain.com"
+                  value={emailFrom}
+                  onChange={(e) => setEmailFrom(e.target.value)}
+                />
+              </div>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={handleConnectEmail}
+                disabled={isPending || !emailApiKey || !emailFrom}
+              >
+                {isPending ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

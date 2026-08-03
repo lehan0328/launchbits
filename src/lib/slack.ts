@@ -113,8 +113,9 @@ interface SlackButton {
   type: 'button';
   text: { type: 'plain_text'; text: string; emoji?: boolean };
   style?: 'primary' | 'danger';
-  action_id: string;
+  action_id?: string;
   value?: string;
+  url?: string;
 }
 
 // ── Block Kit Templates ─────────────────────────────────────────────────────
