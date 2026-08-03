@@ -9,7 +9,7 @@
 - Page-specific sub-components stay in their page folder as `*Client.tsx`.
 
 ## TypeScript
-- **No `as any`**. Ever. If you need a type assertion, create a proper type in `types.ts`. Exception: the admin client (`supabase/admin.ts`) uses `as any` because the untyped `@supabase/supabase-js` client returns `never` for table operations.
+- **No `as any`**. Ever. All 3 Supabase clients (server, admin, browser) are parameterized with the generated `Database` type — `.from()` calls are fully typed. If you need a type assertion, create a proper type in `types.ts`.
 - **No `[key: string]: unknown`** index signatures on interfaces. Define all fields explicitly.
 - **No double-casts** (`x as Foo as Bar`). If TypeScript can't infer the type, the type definition needs fixing.
 - **Use existing types**: `LaunchFormData`, `ReviewWithLaunch`, `Launch`, `LaunchReview` — don't create ad-hoc inline types.
@@ -34,11 +34,25 @@
 - **Every sidebar `<Link>` must have a corresponding page**. Missing pages cause RSC prefetch 404s → page crash.
 
 ## Supabase
-- **Anon client** (`supabase/server.ts`): Used for all normal queries. Subject to RLS.
-- **Admin client** (`supabase/admin.ts`): Uses `SUPABASE_SERVICE_ROLE_KEY`. Bypasses RLS. Used ONLY for user auto-provisioning in `getCurrentUser()`.
+- **Anon client** (`server/supabase.ts`): Used for all normal queries. Subject to RLS.
+- **Admin client** (`server/admin.ts`): Uses `SUPABASE_SERVICE_ROLE_KEY`. Bypasses RLS. Used ONLY for user auto-provisioning in `getCurrentUser()`.
+- **Browser client** (`lib/supabase-client.ts`): Client-side, used only for ReviewsCell real-time.
 - **RLS chicken-and-egg**: New users can't query anything through the anon client because `user_org_id()` returns NULL before the user row exists. The admin client handles provisioning.
 - **Env var naming**: `NEXT_PUBLIC_*` = exposed to browser. `SUPABASE_SERVICE_ROLE_KEY` = server-only, NEVER prefixed with `NEXT_PUBLIC_`.
 - **Env vars needed**: `.env.local` (local), Vercel env vars (production), GitHub Secrets (CI).
+
+## Supabase Types & Migrations
+- **Generated types**: `src/lib/database.types.ts` is auto-generated from the live schema. Regenerate after any migration:
+  ```bash
+  supabase gen types typescript --project-id bfjkiwwbivyxonsosxxd > src/lib/database.types.ts
+  ```
+- **All 3 clients use `Database` generic**: `createServerClient<Database>(...)`, `createSupabaseClient<Database>(...)`, `createBrowserClient<Database>(...)`.
+- **Column name gotchas** (caught by types, easy to get wrong):
+  - `launches` table: column is `name`, NOT `title`
+  - `launch_events` table: `launch_version` (NOT `version`), `performed_by` (NOT `actor_id`), no `metadata` or `details` column — use `notes` for JSON metadata
+  - `launch_reviews` table: does NOT have `review_name`, `label`, `reviewer_emails`, `reviewer_slack_channel`, or `review_type` — those live on `review_definitions` and must be fetched via join (e.g., `.select('id, status, review_definitions(label)')`).
+- **`LaunchReview` interface vs DB table**: The TypeScript `LaunchReview` type has optional joined fields (`label?`, `review_type?`, `reviewer_emails?`). These are populated by `db.ts` queries that join `review_definitions`. Never pass `Partial<LaunchReview>` directly to `.update()` — filter to DB-valid keys first.
+- **Migrations**: Versioned SQL files in `supabase/migrations/`. CI auto-pushes on merge to main via `supabase db push`.
 
 ## Mandatory Pre-Work
 
