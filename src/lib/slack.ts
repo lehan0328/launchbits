@@ -237,40 +237,6 @@ export function buildReviewCompletedUpdateBlocks(data: ReviewCompletedData): Sla
   ];
 }
 
-interface SloWarningData {
-  launchName: string;
-  launchDisplayId: number;
-  launchId: string;
-  reviewLabel: string;
-  sloDueDateStr: string;
-  appUrl: string;
-}
-
-export function buildSloWarningBlocks(data: SloWarningData): SlackBlock[] {
-  const launchUrl = `${data.appUrl}/launches/${data.launchId}`;
-
-  return [
-    {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: `⚠️ *SLO Breach Warning*\n\n*<${launchUrl}|LB-${data.launchDisplayId}: ${data.launchName}>*\n\nThe *${data.reviewLabel}* review is past its SLO due date (${data.sloDueDateStr}).`,
-      },
-    },
-    {
-      type: 'actions',
-      elements: [
-        {
-          type: 'button',
-          text: { type: 'plain_text', text: '🔗 View in Launchbits', emoji: true },
-          action_id: 'view_launch',
-          value: launchUrl,
-        },
-      ],
-    },
-  ];
-}
-
 // ── Request Signature Validation ────────────────────────────────────────────
 
 import crypto from 'crypto';
