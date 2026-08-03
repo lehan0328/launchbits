@@ -148,8 +148,7 @@ async function getEmailConfig(orgId: string): Promise<EmailConfig | null> {
   const supabase = createAdminClient();
   if (!supabase) return null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: org } = await (supabase.from('organizations') as any)
+  const { data: org } = await supabase.from('organizations')
     .select('email_resend_api_key_encrypted, email_from_address')
     .eq('id', orgId)
     .single();

@@ -575,8 +575,7 @@ export async function disconnectGitHubAction() {
   }
 
   const supabase = await createClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('organizations') as any)
+  await supabase.from('organizations')
     .update({ github_app_installation_id: null })
     .eq('id', user.org_id);
 
@@ -597,8 +596,7 @@ export async function connectEmailAction(apiKey: string, fromAddress: string) {
   const encryptedKey = encrypt(apiKey);
 
   const supabase = await createClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('organizations') as any)
+  await supabase.from('organizations')
     .update({
       email_resend_api_key_encrypted: encryptedKey,
       email_from_address: fromAddress,
@@ -619,8 +617,7 @@ export async function disconnectEmailAction() {
   }
 
   const supabase = await createClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('organizations') as any)
+  await supabase.from('organizations')
     .update({ email_resend_api_key_encrypted: null, email_from_address: null })
     .eq('id', user.org_id);
 

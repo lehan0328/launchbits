@@ -54,8 +54,7 @@ async function saveSlackMessage(
   const supabase = createAdminClient();
   if (!supabase) return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from('slack_messages') as any).insert([{
+  await supabase.from('slack_messages').insert([{
     org_id: orgId,
     launch_id: launchId,
     review_id: reviewId,
@@ -205,8 +204,7 @@ export async function notifySloWarning(
     const supabase = createAdminClient();
     if (!supabase) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: org } = await (supabase.from('organizations') as any)
+    const { data: org } = await supabase.from('organizations')
       .select('slack_bot_token_encrypted')
       .eq('id', orgId)
       .single();
@@ -215,8 +213,7 @@ export async function notifySloWarning(
     const token = decrypt(org.slack_bot_token_encrypted);
 
     // Find the review's Slack channel from the review definition
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: reviewDef } = await (supabase.from('review_definitions') as any)
+    const { data: reviewDef } = await supabase.from('review_definitions')
       .select('reviewer_slack_channel')
       .eq('org_id', orgId)
       .eq('label', reviewName)

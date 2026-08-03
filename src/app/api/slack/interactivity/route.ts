@@ -96,8 +96,7 @@ export async function POST(request: NextRequest) {
     const reviewerId = (user?.id as string) || null;
 
     // Update the review
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('launch_reviews') as any)
+    await supabase.from('launch_reviews')
       .update({
         status: newStatus,
         reviewed_by: reviewerId,
@@ -109,14 +108,13 @@ export async function POST(request: NextRequest) {
 
     // Log audit event
     const launch = review.launch as Launch;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('launch_events') as any).insert([{
+    await supabase.from('launch_events').insert([{
       launch_id: launch.id,
       launch_version: launch.version,
       event_type: isApproval ? 'REVIEW_APPROVED' : 'REVIEW_DENIED',
       performed_by: reviewerId,
       performed_by_name: reviewerName,
-      details: { review_id: reviewId, source: 'slack' },
+      notes: JSON.stringify({ review_id: reviewId, source: 'slack' }),
     }]);
 
     // Get review definition label for notification

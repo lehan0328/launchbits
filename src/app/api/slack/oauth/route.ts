@@ -69,8 +69,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/settings?slack=error', request.url));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updateError } = await (supabase.from('organizations') as any)
+  const { error: updateError } = await supabase.from('organizations')
     .update({
       slack_bot_token_encrypted: encryptedToken,
       slack_team_id: tokenData.team.id,

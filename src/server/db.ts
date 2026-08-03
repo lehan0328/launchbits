@@ -13,6 +13,7 @@
 import { createClient } from '@/server/supabase';
 import { createAdminClient } from '@/server/admin';
 import { PG_UNIQUE_VIOLATION, PGRST_NO_ROWS } from '@/lib/db-errors';
+import type { Json, Database } from '@/lib/database.types';
 import type {
   Organization, User, Launch, LaunchReview,
   LaunchEvent, ReviewDefinition, ReviewWithLaunch,
@@ -73,16 +74,14 @@ export async function getCurrentUser(): Promise<User | null> {
   const avatarUrl = authUser.user_metadata?.avatar_url || null;
 
   // First user in the org gets admin role; subsequent users get member
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { count: existingUserCount } = await (admin as any)
+  const { count: existingUserCount } = await admin
     .from('users')
     .select('id', { count: 'exact', head: true })
     .eq('org_id', defaultOrg.id);
 
   const assignedRole = (existingUserCount === 0 || existingUserCount === null) ? 'admin' : 'member';
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: newUserData, error } = await (admin as any)
+  const { data: newUserData, error } = await admin
     .from('users')
     .upsert({
       org_id: defaultOrg.id,
@@ -312,6 +311,11 @@ export async function getPendingReviewsForUser(
 export async function addReview(review: Partial<LaunchReview>): Promise<LaunchReview | null> {
   const supabase = await createClient();
 
+  if (!review.launch_id || !review.review_definition_id) {
+    console.error('addReview: missing required fields launch_id or review_definition_id');
+    return null;
+  }
+
   const { data, error } = await supabase
     .from('launch_reviews')
     .insert({
@@ -345,9 +349,27 @@ export async function updateReview(
   updates: Partial<LaunchReview>
 ): Promise<LaunchReview | null> {
   const supabase = await createClient();
+
+  type ReviewUpdate = Database['public']['Tables']['launch_reviews']['Update'];
+
+  // Pick only columns that exist on the launch_reviews table
+  const dbUpdates: ReviewUpdate = {};
+  const validKeys = [
+    'status', 'notes', 'reviewed_by', 'reviewed_by_name', 'reviewed_at',
+    'slo_started_at', 'slo_due_at', 'slo_breached', 'trigger_reason',
+    'fyi_allowed', 'owner_approval_disallowed', 'access_restricted',
+    'launch_id', 'review_definition_id',
+  ] as const;
+  for (const key of validKeys) {
+    if (key in updates && updates[key] !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (dbUpdates as Record<string, unknown>)[key] = updates[key];
+    }
+  }
+
   const { data, error } = await supabase
     .from('launch_reviews')
-    .update(updates)
+    .update(dbUpdates)
     .eq('id', id)
     .select()
     .single();
@@ -447,8 +469,8 @@ export async function addEvent(
     performed_by: performedBy,
     performed_by_name: performedByName,
     field_changed: details?.field ?? null,
-    old_value: details?.old ?? null,
-    new_value: details?.new_val ?? null,
+    old_value: (details?.old ?? null) as Json | null,
+    new_value: (details?.new_val ?? null) as Json | null,
     notes: details?.notes ?? null,
   });
 }

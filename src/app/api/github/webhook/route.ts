@@ -72,8 +72,7 @@ async function handlePullRequest(payload: any) {
   if (!supabase) return NextResponse.json({ ok: true });
 
   // Find launches linked to this PR
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: launches } = await (supabase.from('launches') as any)
+  const { data: launches } = await supabase.from('launches')
     .select('id')
     .or(`github_repo.eq.${repo},github_repo.eq.https://github.com/${repo}`)
     .eq('github_pr_number', prNumber);
@@ -102,8 +101,7 @@ async function handleCheckSuiteRequested(payload: any) {
   if (!supabase) return NextResponse.json({ ok: true });
 
   for (const pr of prs) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: launches } = await (supabase.from('launches') as any)
+    const { data: launches } = await supabase.from('launches')
       .select('id')
       .or(`github_repo.eq.${repo},github_repo.eq.https://github.com/${repo}`)
       .eq('github_pr_number', pr.number);

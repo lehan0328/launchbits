@@ -27,9 +27,9 @@ export async function GET(request: NextRequest) {
   }
 
   // Find reviews that are past due and not yet marked as breached
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: breachedReviews, error } = await (supabase.from('launch_reviews') as any)
-    .select('id, launch_id, review_name, slo_due_at, slo_breached, status, reviewer_emails, org_id, label')
+  // Join review_definitions to get label, slo_days, and reviewer_emails
+  const { data: breachedReviews, error } = await supabase.from('launch_reviews')
+    .select('id, launch_id, slo_due_at, slo_breached, status, review_definition_id, review_definitions(label, slo_days, reviewer_emails)')
     .eq('status', 'PENDING_REVIEW')
     .eq('slo_breached', false)
     .not('slo_due_at', 'is', null)
@@ -48,44 +48,36 @@ export async function GET(request: NextRequest) {
 
   for (const review of breachedReviews) {
     try {
+      // Extract joined review definition fields
+      const reviewDef = review.review_definitions as unknown as { label: string; slo_days: number; reviewer_emails: string[] | null } | null;
+      const reviewLabel = reviewDef?.label ?? 'Unknown';
+      const sloDays = reviewDef?.slo_days ?? 0;
+      const reviewerEmails = reviewDef?.reviewer_emails ?? [];
+
       // Mark as breached
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('launch_reviews') as any)
+      await supabase.from('launch_reviews')
         .update({ slo_breached: true })
         .eq('id', review.id);
 
       // Get launch details for notifications
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: launch } = await (supabase.from('launches') as any)
+      const { data: launch } = await supabase.from('launches')
         .select('id, name, org_id, version')
         .eq('id', review.launch_id)
         .single();
 
       if (!launch) continue;
 
-      // Get review definition for SLO days
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: reviewDef } = await (supabase.from('review_definitions') as any)
-        .select('slo_days')
-        .eq('label', review.label)
-        .eq('org_id', launch.org_id)
-        .single();
-
-      const sloDays = reviewDef?.slo_days || 0;
-      const reviewerEmails = review.reviewer_emails || [];
-
       // Log audit event
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from('launch_events') as any).insert({
+      await supabase.from('launch_events').insert({
         launch_id: launch.id,
-        version: launch.version || 1,
+        launch_version: launch.version || 1,
         event_type: 'SLO_BREACHED',
-        actor_id: null, // system action
-        metadata: {
-          review: review.review_name || review.label,
+        performed_by: null, // system action
+        notes: JSON.stringify({
+          review: reviewLabel,
           slo_days: sloDays,
           due_at: review.slo_due_at,
-        },
+        }),
       });
 
       // Slack notification (fire-and-forget)
@@ -93,7 +85,7 @@ export async function GET(request: NextRequest) {
         launch.org_id,
         launch.name,
         launch.id,
-        review.review_name || review.label,
+        reviewLabel,
       );
 
       // Email notification (fire-and-forget)
@@ -102,7 +94,7 @@ export async function GET(request: NextRequest) {
           launch.org_id,
           launch.name,
           launch.id,
-          review.review_name || review.label,
+          reviewLabel,
           reviewerEmails,
           sloDays,
           review.slo_due_at,

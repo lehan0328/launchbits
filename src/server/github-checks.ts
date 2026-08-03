@@ -39,17 +39,15 @@ export async function syncCheckRun(launchId: string): Promise<void> {
     if (!supabase) return;
 
     // Fetch launch with org
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: launch } = await (supabase.from('launches') as any)
-      .select('id, title, github_repo, github_pr_number, status, org_id')
+    const { data: launch } = await supabase.from('launches')
+      .select('id, name, github_repo, github_pr_number, status, org_id')
       .eq('id', launchId)
       .single();
 
     if (!launch?.github_repo || !launch?.github_pr_number) return;
 
     // Fetch org for installation ID
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: org } = await (supabase.from('organizations') as any)
+    const { data: org } = await supabase.from('organizations')
       .select('github_app_installation_id')
       .eq('id', launch.org_id)
       .single();
@@ -62,16 +60,23 @@ export async function syncCheckRun(launchId: string): Promise<void> {
     // Get installation token
     const token = await getInstallationToken(org.github_app_installation_id);
 
-    // Fetch all reviews for this launch
+    // Fetch all reviews for this launch (join review_definitions for label)
     const { data: reviews } = await supabase
       .from('launch_reviews')
-      .select('id, status, review_name')
+      .select('id, status, review_definitions(label)')
       .eq('launch_id', launchId);
 
     if (!reviews || reviews.length === 0) return;
 
+    // Map to ReviewRow format expected by computeCheckStatus
+    const mappedReviews: ReviewRow[] = reviews.map(r => ({
+      id: r.id,
+      status: r.status,
+      review_name: (r.review_definitions as unknown as { label: string })?.label ?? 'Unknown',
+    }));
+
     // Compute aggregate status
-    const { status, conclusion, title, summary } = computeCheckStatus(reviews, launch.title);
+    const { status, conclusion, title, summary } = computeCheckStatus(mappedReviews, launch.name);
     const detailsUrl = `${APP_URL}/launches/${launchId}`;
 
     // Get the head SHA of the PR
