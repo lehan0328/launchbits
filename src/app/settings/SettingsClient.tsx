@@ -24,7 +24,10 @@ export default function SettingsClient({ org, user, reviewDefs }: SettingsClient
 
       <div className="app-content">
 
-        {/* ── Section 1: Organization ── */}
+        {/* ── Section 1: Integrations ── */}
+        <IntegrationsSection org={org} />
+
+        {/* ── Section 2: Organization ── */}
         <div className="ar-section">
           <div className="ar-section-header">
             <span className="ar-check-icon">⚙</span>
@@ -55,10 +58,10 @@ export default function SettingsClient({ org, user, reviewDefs }: SettingsClient
           </div>
         </div>
 
-        {/* ── Section 2: Review Types ── */}
+        {/* ── Section 3: Review Types ── */}
         <ReviewTypesSection reviewDefs={reviewDefs} />
 
-        {/* ── Section 3: Policy Rules ── */}
+        {/* ── Section 4: Policy Rules ── */}
         <div className="ar-section">
           <div className="ar-section-header">
             <span className="ar-check-icon">☰</span>
@@ -92,11 +95,8 @@ export default function SettingsClient({ org, user, reviewDefs }: SettingsClient
           </div>
         </div>
 
-        {/* ── Section 4: Team ── */}
+        {/* ── Section 5: Team ── */}
         <TeamSection users={[user]} />
-
-        {/* ── Section 5: Integrations ── */}
-        <IntegrationsSection org={org} />
 
       </div>
     </>
